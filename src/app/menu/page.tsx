@@ -1,9 +1,9 @@
 
-import { Navbar } from "@/navbar"; // Note: Re-using the navbar or creating specific ones
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Navbar as MainNavbar } from "@/components/Navbar";
 import { MobileNav } from "@/components/MobileNav";

@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Home, UtensilsCrossed, CalendarDays, ShoppingBag, MapPin } from 'lucide-react';
+import { Home, UtensilsCrossed, CalendarDays, MapPin } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -10,7 +10,6 @@ const navItems = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Menu', href: '/menu', icon: UtensilsCrossed },
   { label: 'Reserve', href: '/reserve', icon: CalendarDays },
-  { label: 'Order', href: '/order', icon: ShoppingBag },
   { label: 'Contact', href: '/contact', icon: MapPin },
 ];
 

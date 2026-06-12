@@ -2,7 +2,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
-import { AIConsultant } from "@/components/AIConsultant";
 import { VIPHub } from "@/components/VIPHub";
 import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import { MobileNav } from "@/components/MobileNav";
@@ -63,33 +62,6 @@ export default function Home() {
               <Star className="w-4 h-4 text-secondary fill-secondary" />
               <span>4.4 Star Rated Excellence</span>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* AI Concierge Section */}
-      <section className="py-24 bg-primary text-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8">
-            <span className="text-secondary uppercase tracking-[0.3em] font-bold text-sm block">Luxury Experience</span>
-            <h2 className="font-headline text-4xl md:text-5xl font-bold leading-tight">
-              Meet Your Personal <br/>
-              <span className="italic">Dining Sommelier</span>
-            </h2>
-            <p className="font-body text-lg text-white/70 leading-relaxed">
-              Our AI-powered concierge understands your unique palate. Get personalized protein and drink pairing suggestions from our curated menu in seconds.
-            </p>
-            <AIConsultant />
-          </div>
-          <div className="relative h-[600px] w-full group overflow-hidden">
-             <Image 
-                src={signatureGrill?.imageUrl || ""} 
-                alt="Grilling perfection" 
-                fill 
-                className="object-cover grayscale hover:grayscale-0 transition-all duration-700 scale-105 group-hover:scale-100"
-                data-ai-hint="ribeye steak"
-             />
-             <div className="absolute inset-0 border-[20px] border-primary/50 m-4 pointer-events-none"></div>
           </div>
         </div>
       </section>
