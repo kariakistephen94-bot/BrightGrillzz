@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "Cinematic shot of grilled wagyu beef",
+      "imageUrl": "https://picsum.photos/seed/bg1/1920/1080",
+      "imageHint": "grilled steak"
+    },
+    {
+      "id": "signature-grill",
+      "description": "Perfectly charred ribeye steak",
+      "imageUrl": "https://picsum.photos/seed/steak1/600/400",
+      "imageHint": "ribeye steak"
+    },
+    {
+      "id": "seafood-platter",
+      "description": "Premium lobster and shrimp platter",
+      "imageUrl": "https://picsum.photos/seed/sea1/600/400",
+      "imageHint": "seafood platter"
+    },
+    {
+      "id": "grilled-chicken",
+      "description": "Succulent peri-peri chicken",
+      "imageUrl": "https://picsum.photos/seed/chick1/600/400",
+      "imageHint": "grilled chicken"
+    },
+    {
+      "id": "luxury-interior",
+      "description": "Upscale dining room interior",
+      "imageUrl": "https://picsum.photos/seed/int1/1200/800",
+      "imageHint": "luxury restaurant"
+    },
+    {
+      "id": "premium-drink",
+      "description": "Crafted cocktail with garnishes",
+      "imageUrl": "https://picsum.photos/seed/drink1/600/400",
+      "imageHint": "cocktail"
+    }
+  ]
 }
