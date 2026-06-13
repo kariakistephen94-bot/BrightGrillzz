@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+
+@import "tailwindcss";
+
+/*
+  BrightGrillzz design system — structure & component patterns ported from the
+  GrillsJunction template, re-skinned to the BrightGrillzz brand:
+    • Navy  #001a4d  → primary
+    • Burgundy #c41e3a → secondary / accent
+    • Cream / warm white → surfaces
+*/
+@theme {
+  /* Semantic surface + text tokens */
+  --color-background: #faf8f5;
+  --color-foreground: #15182b;
+  --color-card: #ffffff;
+  --color-card-foreground: #15182b;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #15182b;
+
+  /* Brand */
+  --color-primary: #001a4d;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #c41e3a;
+  --color-secondary-foreground: #ffffff;
+  --color-accent: #c41e3a;
+  --color-accent-foreground: #ffffff;
+
+  /* Neutrals */
+  --color-muted: #f1efe9;
+  --color-muted-foreground: #6b6b76;
+  --color-border: #e6e2da;
+  --color-input: #e6e2da;
+  --color-ring: #001a4d;
+
+  /* States */
+  --color-destructive: #c1121f;
+  --color-destructive-foreground: #ffffff;
+
+  /* Brand aliases (used directly in markup) */
+  --color-navy: #001a4d;
+  --color-navy-dark: #000d2b;
+  --color-burgundy: #c41e3a;
+  --color-cream: #f3efe7;
+
+  /* Typography */
+  --font-body: "Inter", sans-serif;
+  --font-headline: "Playfair Display", Georgia, serif;
+
+  /* Radii & shadows */
+  --radius: 1.5rem;
+  --shadow-premium: 0 25px 50px -12px rgba(0, 26, 77, 0.25);
+  --shadow-premium-sm: 0 10px 25px -8px rgba(0, 26, 77, 0.15);
+
+  /* Animations */
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-pulse-subtle: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Default border colour (v4 resets this to currentColor) */
+* {
+  border-color: var(--color-border);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-foreground);
+  background-color: var(--color-background);
+  /* Subtle navy glow from the top, echoing the GrillsJunction hero treatment */
+  background-image: radial-gradient(circle at 50% 0%, rgba(0, 26, 77, 0.06) 0%, transparent 55%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6, .font-headline {
+  font-family: var(--font-headline);
+}
+
+/* ---------- Glassmorphism (frosted surfaces) ---------- */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 8px 24px -10px rgba(0, 26, 77, 0.18);
+}
+.glass-dark {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 8px 24px -10px rgba(0, 26, 77, 0.18);
+}
+.glass-card {
+  background: var(--color-card);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 3px rgba(0, 26, 77, 0.08);
+}
+
+/* ---------- Brand gradient text ---------- */
+.text-gradient {
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ---------- Horizontal scroll rails ---------- */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ---------- Safe-area padding for the mobile bottom nav ---------- */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ---------- Page scrollbar ---------- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-muted); }
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 26, 77, 0.4);
+  border-radius: 9999px;
+}
