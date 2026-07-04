@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, verified: false, reason: 'Missing reference' }, { status: 400 })
   }
 
-  const secretKey = process.env.PAYSTACK_SECRET_KEY
+  const secretKey = process.env.TEST_SECRET_KEY
   // Paystack secret keys start with sk_test_/sk_live_. Anything else (e.g. a
   // public key pasted by mistake) cannot authenticate against the API.
   if (!secretKey || !secretKey.startsWith('sk_')) {

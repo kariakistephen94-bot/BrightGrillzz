@@ -3,7 +3,7 @@
 // The script is loaded on demand from js.paystack.co, so there is no npm
 // dependency and nothing is fetched until a customer actually picks Paystack.
 
-export const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? ''
+export const PAYSTACK_PUBLIC_KEY = process.env.TEST_PUBLIC_KEY ?? ''
 
 const PAYSTACK_SCRIPT_URL = 'https://js.paystack.co/v2/inline.js'
 
@@ -68,7 +68,7 @@ export type PaystackResult =
 /** Opens the Paystack popup and resolves when the customer pays or closes it. */
 export async function payWithPaystack({ email, amountNaira, metadata }: PayWithPaystackInput): Promise<PaystackResult> {
   if (!PAYSTACK_PUBLIC_KEY) {
-    throw new Error('Paystack is not configured. Set NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY in .env.local.')
+    throw new Error('Paystack is not configured. Set TEST_PUBLIC_KEY in .env.local.')
   }
 
   await loadPaystackScript()
