@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf'
 import { PAYMENT_DETAILS } from '@/lib/payment'
 import type { BankDetails } from '@/lib/whatsapp'
-import type { Order } from '@/lib/orders'
+import { getPaymentMethod, paymentMethodLabel, type Order } from '@/lib/orders'
 
 type RGB = [number, number, number]
 
@@ -134,11 +134,15 @@ export async function downloadOrderReceipt(
     }
   }
 
+  const paidViaPaystack = getPaymentMethod(order) === 'paystack'
   const infoRows: [string, string, RGB][] = [
     ['Fulfillment', order.fulfillment.type === 'delivery' ? 'Delivery' : 'Pickup', DARK],
-    ['Payment method', 'Bank Transfer', DARK],
+    ['Payment method', paymentMethodLabel(order), DARK],
     ['Payment status', order.paymentConfirmed ? 'CONFIRMED' : 'PENDING', order.paymentConfirmed ? GREEN : AMBER],
   ]
+  if (order.paymentReference) {
+    infoRows.push(['Payment ref', order.paymentReference, DARK])
+  }
   infoRows.forEach(([label, value, color]) => {
     text('normal', 9.5, MUTED)
     doc.text(label, colR, yR)
@@ -228,12 +232,19 @@ export async function downloadOrderReceipt(
   doc.roundedRect(margin, y, contentW, boxH, 2.5, 2.5, 'FD')
   text('bold', 8, MUTED)
   doc.text('PAYMENT DETAILS', margin + 5, y + 7)
-  text('bold', 11, DARK)
-  doc.text(bank.bank, margin + 5, y + 14.5)
-  text('normal', 10, DARK)
-  doc.text(bank.accountNumber, margin + 5, y + 20)
-  text('normal', 9.5, MUTED)
-  doc.text(bank.accountName, right - 5, y + 20, { align: 'right' })
+  if (paidViaPaystack) {
+    text('bold', 11, DARK)
+    doc.text('Paid online via Paystack', margin + 5, y + 14.5)
+    text('normal', 10, DARK)
+    doc.text(order.paymentReference ? `Reference: ${order.paymentReference}` : 'Payment confirmed', margin + 5, y + 20)
+  } else {
+    text('bold', 11, DARK)
+    doc.text(bank.bank, margin + 5, y + 14.5)
+    text('normal', 10, DARK)
+    doc.text(bank.accountNumber, margin + 5, y + 20)
+    text('normal', 9.5, MUTED)
+    doc.text(bank.accountName, right - 5, y + 20, { align: 'right' })
+  }
   y += boxH + 12
 
   // ============================ FOOTER ============================

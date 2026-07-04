@@ -4,17 +4,24 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
 import { Textarea } from '@/components/ui/Textarea'
 import { Checkbox } from '@/components/ui/Checkbox'
 import { CopyButton } from '@/components/ui/CopyButton'
+import { toast } from '@/hooks/use-toast'
 import { useCart } from '@/context/cart-context'
 import { formatNaira } from '@/lib/format'
-import { generateTrackingId, saveOrder, type FulfillmentType } from '@/lib/orders'
+import {
+  generateTrackingId,
+  saveOrder,
+  type FulfillmentType,
+  type PaymentMethod,
+} from '@/lib/orders'
 import { PAYMENT_DETAILS } from '@/lib/payment'
+import { payWithPaystack, verifyPaystackPayment } from '@/lib/paystack'
 
 const paymentRows = [
   { label: 'Account number', value: PAYMENT_DETAILS.accountNumber },
@@ -22,11 +29,15 @@ const paymentRows = [
   { label: 'Account name', value: PAYMENT_DETAILS.accountName },
 ]
 
+// 'paying' = Paystack popup open, 'saving' = persisting the order + redirecting.
+type CheckoutPhase = 'idle' | 'paying' | 'saving'
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { items, subtotal, clearCart } = useCart()
 
   const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>('delivery')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank_transfer')
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
@@ -34,7 +45,7 @@ export default function CheckoutPage() {
   const [area, setArea] = useState('')
   const [notes, setNotes] = useState('')
   const [paymentConfirmed, setPaymentConfirmed] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
+  const [phase, setPhase] = useState<CheckoutPhase>('idle')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const total = subtotal
@@ -49,15 +60,14 @@ export default function CheckoutPage() {
       if (!address.trim()) next.address = 'Delivery address is required'
       if (!area.trim()) next.area = 'Area / landmark is required'
     }
-    if (!paymentConfirmed) next.payment = 'Please confirm you have made the payment'
+    if (paymentMethod === 'bank_transfer' && !paymentConfirmed) {
+      next.payment = 'Please confirm you have made the payment'
+    }
     setErrors(next)
     return Object.keys(next).length === 0
   }
 
-  const handlePlaceOrder = () => {
-    if (!validate() || items.length === 0) return
-    setSubmitting(true)
-
+  const finalizeOrder = (payment: { paymentMethod: PaymentMethod; paymentReference?: string }) => {
     const trackingId = generateTrackingId()
     saveOrder({
       trackingId,
@@ -73,19 +83,72 @@ export default function CheckoutPage() {
       subtotal,
       total,
       paymentConfirmed: true,
+      ...payment,
     })
 
     clearCart()
     router.push(`/order/confirmation?tracking=${encodeURIComponent(trackingId)}`)
   }
 
+  const failPayment = (message: string) => {
+    setPhase('idle')
+    setErrors((prev) => ({ ...prev, payment: message }))
+    toast({ title: 'Payment not completed', description: message, variant: 'destructive' })
+  }
+
+  const handlePlaceOrder = async () => {
+    if (!validate() || items.length === 0) return
+
+    if (paymentMethod === 'bank_transfer') {
+      setPhase('saving')
+      finalizeOrder({ paymentMethod: 'bank_transfer' })
+      return
+    }
+
+    setPhase('paying')
+    try {
+      const result = await payWithPaystack({
+        email: email.trim(),
+        amountNaira: total,
+        metadata: {
+          custom_fields: [
+            { display_name: 'Customer', variable_name: 'customer', value: fullName.trim() },
+            { display_name: 'Phone', variable_name: 'phone', value: phone.trim() },
+            { display_name: 'Fulfillment', variable_name: 'fulfillment', value: fulfillmentType },
+          ],
+        },
+      })
+
+      if (result.status === 'cancelled') {
+        setPhase('idle')
+        return
+      }
+
+      setPhase('saving')
+      const confirmed = await verifyPaystackPayment(result.reference, total)
+      if (!confirmed) {
+        failPayment(
+          `We couldn't confirm this payment with Paystack. If you were debited, message us on WhatsApp with reference ${result.reference}.`,
+        )
+        return
+      }
+
+      finalizeOrder({ paymentMethod: 'paystack', paymentReference: result.reference })
+    } catch (err) {
+      failPayment(err instanceof Error ? err.message : 'Payment failed. Please try again.')
+    }
+  }
+
   // Shown the instant the order is placed — keeps clearCart() from briefly
-  // flashing the empty-cart state before the confirmation page loads.
-  if (submitting) {
+  // flashing the empty-cart state before the confirmation page loads. While the
+  // Paystack popup is open it also sits behind the popup's overlay.
+  if (phase !== 'idle') {
     return (
       <div className="pt-28 md:pt-36 pb-24 px-4 min-h-screen flex flex-col items-center justify-center text-center">
         <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-        <p className="text-muted-foreground text-base sm:text-lg animate-pulse">Confirming your order...</p>
+        <p className="text-muted-foreground text-base sm:text-lg animate-pulse">
+          {phase === 'paying' ? 'Waiting for your Paystack payment...' : 'Confirming your order...'}
+        </p>
       </div>
     )
   }
@@ -197,34 +260,83 @@ export default function CheckoutPage() {
 
             {/* Payment */}
             <section className="glass-card rounded-2xl md:rounded-[2rem] p-4 sm:p-6 md:p-8">
-              <h2 className="text-lg sm:text-xl font-bold mb-3 sm:mb-4">Payment</h2>
-              <p className="text-sm text-muted-foreground mb-3">
-                Transfer the exact order total to the account below, then confirm payment.
-              </p>
-              <div className="space-y-3">
-                {paymentRows.map((row) => (
-                  <div key={row.label} className="flex items-center justify-between gap-3 rounded-2xl bg-muted border border-border px-4 py-3">
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{row.label}</p>
-                      <p className="font-bold truncate">{row.value}</p>
-                    </div>
-                    <CopyButton value={row.value} label={row.label} />
-                  </div>
-                ))}
+              <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6">Payment</h2>
+
+              <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                {([
+                  { value: 'bank_transfer', title: 'Bank transfer', sub: 'Transfer to our account, then confirm' },
+                  { value: 'paystack', title: 'Pay online', sub: 'Card, transfer or USSD via Paystack' },
+                ] as const).map((opt) => {
+                  const active = paymentMethod === opt.value
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setPaymentMethod(opt.value)}
+                      className={`text-left flex items-start gap-3 rounded-2xl border p-3 sm:p-4 transition-colors ${
+                        active ? 'border-primary bg-primary/10' : 'border-border bg-muted'
+                      }`}
+                    >
+                      <span
+                        className={`mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 ${
+                          active ? 'border-primary bg-primary' : 'border-muted-foreground'
+                        }`}
+                      />
+                      <span>
+                        <span className="block font-bold text-sm sm:text-base">{opt.title}</span>
+                        <span className="block text-[10px] sm:text-xs text-muted-foreground">{opt.sub}</span>
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
 
-              <div className="mt-4 sm:mt-6 flex items-start gap-3 rounded-2xl border border-border bg-muted p-3 sm:p-4">
-                <Checkbox checked={paymentConfirmed} onCheckedChange={setPaymentConfirmed} className="mt-0.5" />
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setPaymentConfirmed(!paymentConfirmed)}
-                  className="text-xs sm:text-sm leading-relaxed cursor-pointer select-none"
-                >
-                  Yes, I&apos;ve made the payment to the account above for{' '}
-                  <span className="font-bold text-primary">{formatNaira(total)}</span>
-                </span>
-              </div>
+              {paymentMethod === 'bank_transfer' ? (
+                <>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Transfer the exact order total to the account below, then confirm payment.
+                  </p>
+                  <div className="space-y-3">
+                    {paymentRows.map((row) => (
+                      <div key={row.label} className="flex items-center justify-between gap-3 rounded-2xl bg-muted border border-border px-4 py-3">
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{row.label}</p>
+                          <p className="font-bold truncate">{row.value}</p>
+                        </div>
+                        <CopyButton value={row.value} label={row.label} />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 sm:mt-6 flex items-start gap-3 rounded-2xl border border-border bg-muted p-3 sm:p-4">
+                    <Checkbox checked={paymentConfirmed} onCheckedChange={setPaymentConfirmed} className="mt-0.5" />
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setPaymentConfirmed(!paymentConfirmed)}
+                      className="text-xs sm:text-sm leading-relaxed cursor-pointer select-none"
+                    >
+                      Yes, I&apos;ve made the payment to the account above for{' '}
+                      <span className="font-bold text-primary">{formatNaira(total)}</span>
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-2xl border border-border bg-muted p-4 sm:p-5">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm leading-relaxed">
+                        You&apos;ll pay <span className="font-bold text-primary">{formatNaira(total)}</span> in a
+                        secure Paystack window when you place the order — with card, bank transfer or USSD.
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Your payment is confirmed instantly, no screenshots needed.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               {errors.payment && <p className="text-xs text-destructive mt-2">{errors.payment}</p>}
             </section>
           </div>
@@ -265,11 +377,16 @@ export default function CheckoutPage() {
               <Button
                 className="w-full h-12 md:h-14 rounded-full text-sm sm:text-base md:text-lg mt-6 md:mt-8 active:scale-95 transition-transform"
                 onClick={handlePlaceOrder}
-                disabled={submitting}
+                disabled={phase !== 'idle'}
               >
-                {submitting ? 'Placing order...' : 'Place order'}
+                {paymentMethod === 'paystack' ? `Pay ${formatNaira(total)} securely` : 'Place order'}
                 <ArrowRight className="ml-2 w-4 h-4 md:w-5 md:h-5" />
               </Button>
+              {paymentMethod === 'paystack' && (
+                <p className="text-[10px] sm:text-xs text-muted-foreground text-center mt-3">
+                  Secured by Paystack
+                </p>
+              )}
             </div>
           </div>
         </div>

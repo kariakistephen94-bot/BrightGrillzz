@@ -2,6 +2,8 @@ import type { CartItem } from '@/context/cart-context'
 
 export type FulfillmentType = 'delivery' | 'pickup'
 
+export type PaymentMethod = 'bank_transfer' | 'paystack'
+
 export interface OrderCustomer {
   fullName: string
   phone: string
@@ -24,6 +26,18 @@ export interface Order {
   subtotal: number
   total: number
   paymentConfirmed: boolean
+  /** Optional because orders saved before Paystack existed default to bank transfer. */
+  paymentMethod?: PaymentMethod
+  /** Paystack transaction reference — only present on Paystack orders. */
+  paymentReference?: string
+}
+
+export function getPaymentMethod(order: Order): PaymentMethod {
+  return order.paymentMethod ?? 'bank_transfer'
+}
+
+export function paymentMethodLabel(order: Order): string {
+  return getPaymentMethod(order) === 'paystack' ? 'Paystack (online)' : 'Bank Transfer'
 }
 
 const ORDERS_KEY = 'brightgrillzz-orders'

@@ -1,6 +1,6 @@
 import { PAYMENT_DETAILS, WHATSAPP_NUMBER } from '@/lib/payment'
 import { formatNaira } from '@/lib/format'
-import type { Order } from '@/lib/orders'
+import { getPaymentMethod, type Order } from '@/lib/orders'
 
 export interface BankDetails {
   bank: string
@@ -36,12 +36,17 @@ export function buildOrderWhatsAppMessage(
     lines.push(`• ${item.name} × ${item.qty} — ${formatNaira(item.price * item.qty)}`)
   })
 
+  const paymentLine =
+    getPaymentMethod(order) === 'paystack'
+      ? `I have paid online via Paystack.${order.paymentReference ? ` Payment reference: ${order.paymentReference}.` : ''}`
+      : `I have made payment via ${bank.bank} to ${bank.accountNumber} (${bank.accountName}).`
+
   lines.push(
     '',
     `Subtotal: ${formatNaira(order.subtotal)}`,
     `Total: ${formatNaira(order.total)}`,
     '',
-    `I have made payment via ${bank.bank} to ${bank.accountNumber} (${bank.accountName}).`,
+    paymentLine,
     '',
     'Please confirm my order. Thank you!',
   )

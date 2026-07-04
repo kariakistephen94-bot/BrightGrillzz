@@ -7,7 +7,7 @@ import { CheckCircle2, MapPin, ArrowRight, Download, Loader2 } from 'lucide-reac
 import { Button } from '@/components/ui/Button'
 import { CopyButton } from '@/components/ui/CopyButton'
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
-import { getLastOrder, getOrderByTrackingId, type Order } from '@/lib/orders'
+import { getLastOrder, getOrderByTrackingId, getPaymentMethod, paymentMethodLabel, type Order } from '@/lib/orders'
 import { formatNaira } from '@/lib/format'
 import { getWhatsAppOrderUrl } from '@/lib/whatsapp'
 import { downloadOrderReceipt } from '@/lib/receipt-pdf'
@@ -51,6 +51,7 @@ function ConfirmationContent() {
   }
 
   const whatsappUrl = getWhatsAppOrderUrl(order)
+  const paidOnline = getPaymentMethod(order) === 'paystack'
 
   return (
     <div className="pt-28 md:pt-36 pb-24 px-4 min-h-screen">
@@ -61,7 +62,9 @@ function ConfirmationContent() {
           </div>
           <h1 className="text-4xl md:text-5xl font-headline font-bold mb-3">Order placed!</h1>
           <p className="text-muted-foreground">
-            Thank you, {order.customer.fullName}. We&apos;ll confirm once payment is verified.
+            {paidOnline
+              ? <>Thank you, {order.customer.fullName}. Your payment was received — we&apos;re on it!</>
+              : <>Thank you, {order.customer.fullName}. We&apos;ll confirm once payment is verified.</>}
           </p>
         </div>
 
@@ -86,6 +89,19 @@ function ConfirmationContent() {
               <span className="text-muted-foreground">Fulfillment</span>
               <span className="font-bold capitalize">{order.fulfillment.type}</span>
             </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Payment</span>
+              <span className="font-bold">{paymentMethodLabel(order)}</span>
+            </div>
+            {order.paymentReference && (
+              <div className="flex justify-between items-center gap-3">
+                <span className="text-muted-foreground shrink-0">Payment ref</span>
+                <span className="flex items-center gap-1 min-w-0">
+                  <span className="font-bold font-mono text-xs truncate">{order.paymentReference}</span>
+                  <CopyButton value={order.paymentReference} label="Payment reference" className="h-7 w-7" />
+                </span>
+              </div>
+            )}
             {order.fulfillment.type === 'delivery' && (
               <div className="flex gap-2 text-muted-foreground pt-1">
                 <MapPin className="w-4 h-4 shrink-0 text-primary" />
@@ -115,7 +131,9 @@ function ConfirmationContent() {
 
         <div className="mt-8 glass-card rounded-[2rem] p-6 text-center">
           <p className="text-sm text-muted-foreground mb-4">
-            Notify us on WhatsApp so we can confirm your payment and start grilling.
+            {paidOnline
+              ? 'Send us your order on WhatsApp so we can start grilling right away.'
+              : 'Notify us on WhatsApp so we can confirm your payment and start grilling.'}
           </p>
           <Button asChild className="w-full h-14 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-lg">
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">

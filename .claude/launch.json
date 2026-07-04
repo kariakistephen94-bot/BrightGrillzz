@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "brightgrillzz",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "brightgrillzz", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}
