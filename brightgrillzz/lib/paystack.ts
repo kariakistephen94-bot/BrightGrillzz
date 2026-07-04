@@ -3,7 +3,7 @@
 // The script is loaded on demand from js.paystack.co, so there is no npm
 // dependency and nothing is fetched until a customer actually picks Paystack.
 
-export const PAYSTACK_PUBLIC_KEY = process.env.TEST_PUBLIC_KEY ?? ''
+export const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY ?? ''
 
 const PAYSTACK_SCRIPT_URL = 'https://js.paystack.co/v2/inline.js'
 
