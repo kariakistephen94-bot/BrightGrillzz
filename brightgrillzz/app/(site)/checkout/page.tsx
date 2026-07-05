@@ -69,7 +69,7 @@ export default function CheckoutPage() {
 
   const finalizeOrder = (payment: { paymentMethod: PaymentMethod; paymentReference?: string }) => {
     const trackingId = generateTrackingId()
-    saveOrder({
+    const order = {
       trackingId,
       createdAt: new Date().toISOString(),
       customer: { fullName: fullName.trim(), phone: phone.trim(), email: email.trim() },
@@ -84,7 +84,29 @@ export default function CheckoutPage() {
       total,
       paymentConfirmed: true,
       ...payment,
-    })
+    }
+    saveOrder(order)
+
+    // Persist the order to the database and fire confirmation + restaurant
+    // alert emails. keepalive lets the request finish even though we navigate
+    // away immediately; failures never block the order (it's also mirrored to
+    // localStorage above).
+    fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify({
+        trackingId: order.trackingId,
+        createdAt: order.createdAt,
+        customer: order.customer,
+        fulfillment: order.fulfillment,
+        items: order.items.map((i) => ({ name: i.name, qty: i.qty, price: i.price, image: i.image })),
+        subtotal: order.subtotal,
+        total: order.total,
+        paymentMethod: order.paymentMethod,
+        paymentReference: order.paymentReference,
+      }),
+    }).catch(() => {})
 
     clearCart()
     router.push(`/order/confirmation?tracking=${encodeURIComponent(trackingId)}`)

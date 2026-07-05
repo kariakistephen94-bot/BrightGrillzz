@@ -28,7 +28,16 @@ export default function ContactPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission - for now, just send WhatsApp message
+
+    // Email the restaurant (fire-and-forget; keepalive survives the new tab).
+    fetch('/api/notify/reservation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify(formData),
+    }).catch(() => {})
+
+    // Also open a pre-filled WhatsApp message for an instant reply.
     const message = `Hi BrightGrillzz! I'd like to make a reservation.\n\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nDate: ${formData.date}\nTime: ${formData.time}\nGuests: ${formData.guests}\nMessage: ${formData.message}`
     const encodedMessage = encodeURIComponent(message)
     window.open(`https://wa.me/2348181070919?text=${encodedMessage}`, '_blank')
