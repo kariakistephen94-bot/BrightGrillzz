@@ -10,8 +10,8 @@ import {
 } from 'react'
 
 export interface CartItem {
-  /** The underlying menu item id. */
-  id: number
+  /** The underlying menu item id (Supabase uuid). */
+  id: string
   /** Unique per cart line (same as id — BrightGrillzz dishes have no extras). */
   cartId: string
   name: string
@@ -22,7 +22,7 @@ export interface CartItem {
 }
 
 type AddItemInput = {
-  id: number
+  id: string
   name: string
   price: number
   image: string
@@ -41,11 +41,12 @@ interface CartContextValue {
 const CartContext = createContext<CartContextValue | null>(null)
 const STORAGE_KEY = 'brightgrillzz-cart'
 
-function normalizeItem(raw: Partial<CartItem> & { id: number }): CartItem {
+function normalizeItem(raw: Partial<CartItem> & { id: string | number }): CartItem {
   const price = Number(raw.price) || 0
+  const id = String(raw.id)
   return {
-    id: raw.id,
-    cartId: raw.cartId ?? String(raw.id),
+    id,
+    cartId: raw.cartId ?? id,
     name: raw.name ?? '',
     price,
     qty: Number(raw.qty) || 1,
@@ -61,7 +62,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY)
       if (raw) {
-        const parsed = JSON.parse(raw) as (Partial<CartItem> & { id: number })[]
+        const parsed = JSON.parse(raw) as (Partial<CartItem> & { id: string | number })[]
         setItems(parsed.map(normalizeItem))
       }
     } catch {

@@ -13,26 +13,42 @@ import {
   ChevronRight,
   ShoppingCart,
   ArrowRight,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/cart-context'
 import { toast } from '@/hooks/use-toast'
 import { formatNaira } from '@/lib/format'
-import type { MenuItem } from '@/lib/contact'
+import { fetchPublicMenu, type MenuItem } from '@/lib/menu'
 
 const PAGE_SIZE = 8
 
-export function MenuExplorer({ items, scrollTargetId = 'menu' }: { items: MenuItem[]; scrollTargetId?: string }) {
+export function MenuExplorer({ scrollTargetId = 'menu' }: { scrollTargetId?: string }) {
   const { addItem, itemCount, subtotal } = useCart()
+  const [items, setItems] = useState<MenuItem[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [page, setPage] = useState(1)
-  const [expandedDescId, setExpandedDescId] = useState<number | null>(null)
+  const [expandedDescId, setExpandedDescId] = useState<string | null>(null)
+
+  useEffect(() => {
+    let active = true
+    fetchPublicMenu().then((data) => {
+      if (active) {
+        setItems(data)
+        setLoading(false)
+      }
+    })
+    return () => {
+      active = false
+    }
+  }, [])
 
   const categories = useMemo(() => {
     const present: string[] = []
     items.forEach((i) => {
-      if (!present.includes(i.category)) present.push(i.category)
+      if (i.category && !present.includes(i.category)) present.push(i.category)
     })
     return ['All', ...present]
   }, [items])
@@ -63,8 +79,27 @@ export function MenuExplorer({ items, scrollTargetId = 'menu' }: { items: MenuIt
   }
 
   const handleAdd = (item: MenuItem) => {
-    addItem({ id: item.id, name: item.name, price: item.price, image: item.image })
+    addItem({ id: item.id, name: item.name, price: item.price, image: item.image ?? '' })
     toast({ title: 'Added to cart', description: `${item.name} — ${formatNaira(item.price)}` })
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+        <Loader2 className="mb-4 h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm">Loading the grill list…</p>
+      </div>
+    )
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="py-20 text-center">
+        <Utensils className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" />
+        <h3 className="text-2xl font-bold">Our menu is being prepared</h3>
+        <p className="mt-1 text-muted-foreground">Fresh dishes are coming soon — check back shortly.</p>
+      </div>
+    )
   }
 
   return (
@@ -127,13 +162,19 @@ export function MenuExplorer({ items, scrollTargetId = 'menu' }: { items: MenuIt
             >
               <div className="glass-card rounded-2xl md:rounded-[2rem] overflow-hidden flex flex-col h-full shadow-md hover:shadow-premium border border-border hover:border-primary/30 transition-all duration-500 active:scale-[0.98] bg-card">
                 <div className="relative aspect-[4/5] overflow-hidden bg-muted">
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    fill
-                    sizes="(max-width: 1024px) 50vw, 25vw"
-                    className="object-cover hover:scale-105 transition-transform duration-700"
-                  />
+                  {item.image ? (
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      sizes="(max-width: 1024px) 50vw, 25vw"
+                      className="object-cover hover:scale-105 transition-transform duration-700"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
+                      <Utensils className="h-10 w-10 text-primary/30" />
+                    </div>
+                  )}
                   {item.badge && (
                     <div className="absolute top-2.5 left-2.5 md:top-4 md:left-4">
                       <span className="bg-secondary text-white px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-bold shadow-md">
@@ -141,10 +182,12 @@ export function MenuExplorer({ items, scrollTargetId = 'menu' }: { items: MenuIt
                       </span>
                     </div>
                   )}
-                  <div className="absolute top-2.5 right-2.5 md:top-4 md:right-4 flex items-center gap-1 rounded-full bg-white/90 backdrop-blur px-2 py-0.5 shadow-sm">
-                    <Star className="w-3 h-3 text-amber-500 fill-current" />
-                    <span className="text-[10px] md:text-xs font-bold text-slate-800">{item.rating}</span>
-                  </div>
+                  {item.rating > 0 && (
+                    <div className="absolute top-2.5 right-2.5 md:top-4 md:right-4 flex items-center gap-1 rounded-full bg-white/90 backdrop-blur px-2 py-0.5 shadow-sm">
+                      <Star className="w-3 h-3 text-amber-500 fill-current" />
+                      <span className="text-[10px] md:text-xs font-bold text-slate-800">{item.rating}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="p-3.5 md:p-6 flex-1 flex flex-col">
                   <h3 className="text-base md:text-xl font-bold mb-1.5 leading-tight line-clamp-1">{item.name}</h3>
@@ -155,13 +198,15 @@ export function MenuExplorer({ items, scrollTargetId = 'menu' }: { items: MenuIt
                   >
                     {item.description}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => setExpandedDescId(expandedDescId === item.id ? null : item.id)}
-                    className="self-start mt-0.5 text-primary font-semibold text-[11px] md:text-xs hover:underline"
-                  >
-                    {expandedDescId === item.id ? 'Show less' : 'Show more'}
-                  </button>
+                  {item.description && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedDescId(expandedDescId === item.id ? null : item.id)}
+                      className="self-start mt-0.5 text-primary font-semibold text-[11px] md:text-xs hover:underline"
+                    >
+                      {expandedDescId === item.id ? 'Show less' : 'Show more'}
+                    </button>
+                  )}
                   <div className="mt-auto pt-3 flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <span className="text-sm md:text-lg font-bold text-primary">{formatNaira(item.price)}</span>

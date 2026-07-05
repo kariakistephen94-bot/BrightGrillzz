@@ -290,3 +290,51 @@ export async function getTopItems(): Promise<
   if (!data) return []
   return data as unknown as { name: string; orders: number; revenue: number }[]
 }
+
+/* --------------------------------- menu -------------------------------- */
+
+export interface AdminMenuItem {
+  id: string
+  name: string
+  description: string
+  price: number
+  category: string
+  image: string | null
+  badge: string | null
+  rating: number
+  isAvailable: boolean
+  sortOrder: number
+}
+
+export async function getAdminMenu(): Promise<AdminMenuItem[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('menu_items')
+    .select('id, name, description, price, category, image, badge, rating, is_available, sort_order')
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+  if (error || !data) return []
+  return (data as unknown as {
+    id: string
+    name: string
+    description: string | null
+    price: number
+    category: string | null
+    image: string | null
+    badge: string | null
+    rating: number | null
+    is_available: boolean
+    sort_order: number
+  }[]).map((m) => ({
+    id: m.id,
+    name: m.name,
+    description: m.description ?? '',
+    price: m.price,
+    category: m.category ?? '',
+    image: m.image,
+    badge: m.badge,
+    rating: m.rating ?? 0,
+    isAvailable: m.is_available,
+    sortOrder: m.sort_order,
+  }))
+}

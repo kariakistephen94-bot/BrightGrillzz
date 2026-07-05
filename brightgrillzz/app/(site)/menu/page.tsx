@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion'
 import { MenuExplorer } from '@/components/menu/MenuExplorer'
-import { FULL_MENU } from '@/lib/contact'
 
 export default function MenuPage() {
   return (
@@ -21,7 +20,7 @@ export default function MenuPage() {
           </p>
         </motion.div>
 
-        <MenuExplorer items={FULL_MENU} />
+        <MenuExplorer />
       </div>
     </div>
   )

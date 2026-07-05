@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/Button'
 import { MenuExplorer } from '@/components/menu/MenuExplorer'
 import {
   CONTACT,
-  FULL_MENU,
   STATS,
   REVIEWS,
   HERO_IMAGE,
@@ -90,7 +89,7 @@ export default function Home() {
             </p>
           </div>
 
-          <MenuExplorer items={FULL_MENU} />
+          <MenuExplorer />
         </div>
       </section>
 
