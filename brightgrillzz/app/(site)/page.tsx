@@ -2,17 +2,12 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import { Flame, Truck, ShieldCheck, Star } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
+import { motion, type Variants } from 'framer-motion'
+import { Flame, Truck, ShieldCheck, Star, ChevronDown, Clock, MapPin } from 'lucide-react'
 import { MenuExplorer } from '@/components/menu/MenuExplorer'
-import {
-  CONTACT,
-  STATS,
-  REVIEWS,
-  HERO_IMAGE,
-  ABOUT_IMAGE,
-} from '@/lib/contact'
+import { Reveal, RevealGroup, RevealItem } from '@/components/ui/Reveal'
+import { Aurora } from '@/components/ui/Aurora'
+import { CONTACT, STATS, REVIEWS, HERO_IMAGE, ABOUT_IMAGE } from '@/lib/contact'
 
 const WHY = [
   { icon: ShieldCheck, title: 'Premium Quality Cuts', desc: 'We source only the finest proteins, hand-picked daily for maximum flavour and tenderness.' },
@@ -20,11 +15,21 @@ const WHY = [
   { icon: Truck, title: 'Abuja-Wide Delivery', desc: 'From our grill in Wuse 2 to your door — fast, hot and no-contact, around the clock.' },
 ]
 
+const heroContainer: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+}
+const heroItem: Variants = {
+  hidden: { opacity: 0, y: 26 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
+}
+
 export default function Home() {
   return (
     <div className="overflow-hidden">
-      {/* ===== Hero ===== */}
-      <section className="relative h-screen min-h-[560px] md:min-h-[720px] flex items-center justify-center">
+      {/* ===================== HERO ===================== */}
+      <section className="relative flex min-h-[100svh] items-center justify-center overflow-hidden">
+        {/* Backdrop */}
         <div className="absolute inset-0">
           <Image
             src={HERO_IMAGE}
@@ -32,150 +37,222 @@ export default function Home() {
             fill
             priority
             sizes="100vw"
-            className="object-cover brightness-[0.5]"
+            className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-navy-dark/70 via-navy-dark/45 to-navy-dark/85" />
+          <div className="absolute inset-0 bg-gradient-to-b from-navy-dark/85 via-navy-dark/55 to-navy-dark/92" />
+          <div className="absolute inset-0 [background:radial-gradient(120%_80%_at_50%_20%,transparent_30%,rgba(0,13,43,0.6)_100%)]" />
         </div>
+        <Aurora
+          className="mix-blend-screen opacity-70"
+          blobs={[
+            { color: 'var(--color-primary)', size: '38rem', top: '-10rem', left: '-6rem', opacity: 0.5 },
+            { color: 'var(--color-secondary)', size: '30rem', bottom: '-8rem', right: '-6rem', opacity: 0.45, delay: '-7s' },
+            { color: '#d9a441', size: '24rem', top: '20%', right: '10%', opacity: 0.3, delay: '-13s' },
+          ]}
+        />
+        <div className="grain absolute inset-0" />
 
-        <div className="relative z-10 text-center max-w-4xl px-4 pt-24 md:pt-32">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+        {/* Content */}
+        <motion.div
+          variants={heroContainer}
+          initial="hidden"
+          animate="show"
+          className="relative z-10 mx-auto max-w-4xl px-5 pt-24 text-center md:pt-28"
+        >
+          <motion.p
+            variants={heroItem}
+            className="glass-noir mx-auto mb-7 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold text-white sm:text-sm"
           >
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-xs sm:text-sm font-semibold text-white backdrop-blur-sm mb-6">
-              <Star className="w-3.5 h-3.5 text-secondary fill-current" />
-              {CONTACT.rating}★ · Premium BBQ · Wuse 2, Abuja
-            </p>
+            <Star className="h-3.5 w-3.5 fill-secondary text-secondary" />
+            {CONTACT.rating}★ · Premium BBQ · Wuse 2, Abuja
+          </motion.p>
 
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-headline font-bold mb-6 tracking-tight text-white leading-tight">
-              Flame-Grilled <span className="text-secondary">Excellence</span>
-            </h1>
-            <p className="text-base md:text-lg lg:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed font-light">
-              Abuja&apos;s home of luxury barbecue — open 24/7 and trusted by celebrities,
-              tastemakers and food connoisseurs across the city.
-            </p>
+          <motion.h1
+            variants={heroItem}
+            className="font-headline text-[2.7rem] font-bold leading-[1.05] tracking-tight text-white sm:text-6xl md:text-7xl lg:text-[5.25rem]"
+          >
+            Flame-Grilled
+            <br className="hidden sm:block" />{' '}
+            <span className="text-gradient-animate">Excellence</span>
+          </motion.h1>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-              <Button asChild size="lg" className="rounded-full h-14 px-10 text-lg w-full sm:w-auto">
-                <Link href="/menu">Order Now</Link>
-              </Button>
-              <Button
-                asChild
-                size="lg"
-                variant="outline"
-                className="rounded-full border-white/40 bg-white/10 text-white hover:bg-white/20 h-14 px-10 text-lg w-full sm:w-auto backdrop-blur-sm"
-              >
-                <Link href="/#menu">Explore Menu</Link>
-              </Button>
-            </div>
+          <motion.p
+            variants={heroItem}
+            className="mx-auto mt-6 max-w-2xl text-base font-light leading-relaxed text-white/85 sm:text-lg md:text-xl"
+          >
+            Abuja&apos;s home of luxury barbecue — open 24/7 and trusted by celebrities,
+            tastemakers and food connoisseurs across the city.
+          </motion.p>
 
-            <p className="text-[10px] sm:text-xs md:text-sm tracking-[0.25em] sm:tracking-[0.3em] font-medium text-white/60 uppercase">
-              Dine-in <span className="mx-1.5 sm:mx-3 text-secondary">•</span> Drive-through
-              <span className="mx-1.5 sm:mx-3 text-secondary">•</span> Delivery
-            </p>
+          <motion.div
+            variants={heroItem}
+            className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4"
+          >
+            <Link
+              href="/menu"
+              className="sheen press inline-flex h-14 w-full items-center justify-center rounded-full bg-gradient-to-br from-secondary to-[#9e1730] px-10 text-lg font-semibold text-white shadow-xl shadow-secondary/30 sm:w-auto"
+            >
+              Order Now
+            </Link>
+            <Link
+              href="/#menu"
+              className="press glass-noir inline-flex h-14 w-full items-center justify-center rounded-full px-10 text-lg font-semibold text-white sm:w-auto"
+            >
+              Explore Menu
+            </Link>
           </motion.div>
-        </div>
+
+          {/* Floating info chips (extra pop on mobile) */}
+          <motion.div variants={heroItem} className="mt-8 flex flex-wrap items-center justify-center gap-2.5">
+            {[
+              { icon: Clock, label: 'Open 24/7' },
+              { icon: Truck, label: 'Abuja-wide delivery' },
+              { icon: MapPin, label: 'Wuse 2' },
+            ].map((chip) => (
+              <span
+                key={chip.label}
+                className="glass-noir inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium text-white/90"
+              >
+                <chip.icon className="h-3.5 w-3.5 text-secondary" />
+                {chip.label}
+              </span>
+            ))}
+          </motion.div>
+        </motion.div>
+
+        {/* Scroll cue */}
+        <Link
+          href="/#menu"
+          aria-label="Scroll to menu"
+          className="absolute bottom-7 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-1.5 text-white/70 md:flex"
+        >
+          <span className="text-[0.65rem] font-semibold uppercase tracking-[0.3em]">Scroll</span>
+          <ChevronDown className="h-5 w-5 animate-bob" />
+        </Link>
       </section>
 
-      {/* ===== The Grill List (interactive menu) ===== */}
-      <section id="menu" className="py-16 md:py-24 px-4 bg-background scroll-mt-24">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8 md:mb-12">
-            <p className="text-secondary font-bold text-xs md:text-sm tracking-widest uppercase mb-2">Our Specialties</p>
-            <h2 className="text-3xl md:text-5xl font-headline font-bold">The Grill List</h2>
-            <p className="text-sm md:text-base text-muted-foreground max-w-xl mx-auto mt-3">
+      {/* ===================== MENU ===================== */}
+      <section id="menu" className="relative scroll-mt-24 overflow-hidden px-4 py-20 md:py-28">
+        <Aurora
+          blobs={[
+            { color: 'var(--color-primary)', size: '30rem', top: '-6rem', right: '-10rem', opacity: 0.14 },
+            { color: 'var(--color-secondary)', size: '26rem', bottom: '0', left: '-12rem', opacity: 0.12, delay: '-8s' },
+          ]}
+        />
+        <div className="relative mx-auto max-w-7xl">
+          <Reveal className="mb-10 text-center md:mb-14">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-secondary md:text-sm">Our Specialties</p>
+            <h2 className="font-headline text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+              The <span className="text-gradient">Grill List</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-sm text-muted-foreground md:text-base">
               Explore our premium selection of flame-grilled delicacies, prepared fresh in Wuse 2, Abuja.
             </p>
-          </div>
-
+          </Reveal>
           <MenuExplorer />
         </div>
       </section>
 
-      {/* ===== Why BrightGrillzz ===== */}
-      <section className="py-20 md:py-24 px-4 bg-muted/40">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-2 gap-12 md:gap-16 items-center">
-          <div className="relative aspect-square rounded-[3rem] overflow-hidden shadow-premium">
-            <Image
-              src={ABOUT_IMAGE}
-              alt="The BrightGrillzz dining experience"
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover"
-            />
-            <div className="absolute inset-0 border-[1.25rem] border-background/20 rounded-[3rem]" />
-            <div className="absolute bottom-6 left-6 right-6 text-white">
-              <div className="font-headline text-5xl font-bold">24/7</div>
-              <p className="text-white/80 font-medium">Always open. Always grilling.</p>
+      {/* ===================== WHY ===================== */}
+      <section className="relative overflow-hidden px-4 py-20 md:py-28">
+        <div className="absolute inset-0 bg-gradient-to-b from-muted/50 to-transparent" />
+        <div className="relative mx-auto grid max-w-7xl items-center gap-12 md:grid-cols-2 md:gap-16">
+          <Reveal direction="right">
+            <div className="lift group relative aspect-square overflow-hidden rounded-[2.5rem] shadow-premium">
+              <Image
+                src={ABOUT_IMAGE}
+                alt="The BrightGrillzz dining experience"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy-dark/70 via-transparent to-transparent" />
+              {/* Floating glass stat */}
+              <div className="glass-strong absolute bottom-5 left-5 right-5 flex items-center gap-4 rounded-3xl p-4 animate-float-slow">
+                <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-[#00296b] text-white">
+                  <Clock className="h-6 w-6" />
+                </div>
+                <div>
+                  <div className="font-headline text-3xl font-bold leading-none text-foreground">24/7</div>
+                  <p className="mt-1 text-sm font-medium text-muted-foreground">Always open. Always grilling.</p>
+                </div>
+              </div>
             </div>
-          </div>
+          </Reveal>
 
           <div>
-            <p className="text-secondary font-bold text-sm tracking-widest uppercase mb-3">Why BrightGrillzz</p>
-            <h2 className="text-4xl md:text-5xl font-headline font-bold mb-8 leading-tight">
-              A cut above <br />
-              <span className="text-primary">the rest</span>
-            </h2>
+            <Reveal>
+              <p className="mb-3 text-sm font-bold uppercase tracking-[0.25em] text-secondary">Why BrightGrillzz</p>
+              <h2 className="mb-8 font-headline text-4xl font-bold leading-tight tracking-tight md:text-5xl">
+                A cut above <br />
+                <span className="text-gradient">the rest</span>
+              </h2>
+            </Reveal>
 
-            <div className="space-y-8">
-              {WHY.map((item, i) => (
-                <div key={i} className="flex gap-6">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-                    <item.icon className="w-6 h-6 text-primary" />
+            <RevealGroup className="space-y-4">
+              {WHY.map((item) => (
+                <RevealItem key={item.title}>
+                  <div className="glass-card lift flex gap-5 rounded-3xl p-5">
+                    <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
+                      <item.icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h4 className="mb-1 text-lg font-bold">{item.title}</h4>
+                      <p className="text-sm leading-relaxed text-muted-foreground">{item.desc}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xl font-bold mb-2">{item.title}</h4>
-                    <p className="text-muted-foreground leading-relaxed">{item.desc}</p>
-                  </div>
-                </div>
+                </RevealItem>
               ))}
-            </div>
+            </RevealGroup>
           </div>
         </div>
       </section>
 
-      {/* ===== Stats ===== */}
-      <section className="py-16 px-4 bg-background">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {STATS.map((stat, i) => (
-            <div key={i}>
-              <div className="text-4xl md:text-5xl font-bold text-primary mb-2 font-headline">{stat.value}</div>
-              <div className="text-sm uppercase tracking-widest text-muted-foreground font-bold">{stat.label}</div>
-            </div>
+      {/* ===================== STATS ===================== */}
+      <section className="px-4 py-16">
+        <RevealGroup className="mx-auto grid max-w-5xl grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+          {STATS.map((stat) => (
+            <RevealItem key={stat.label}>
+              <div className="glass-card lift rounded-3xl p-6 text-center">
+                <div className="font-headline text-3xl font-bold text-gradient md:text-4xl">{stat.value}</div>
+                <div className="mt-2 text-[0.7rem] font-bold uppercase tracking-widest text-muted-foreground md:text-xs">
+                  {stat.label}
+                </div>
+              </div>
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
       </section>
 
-      {/* ===== Testimonials ===== */}
-      <section className="py-20 md:py-24 px-4 overflow-hidden">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12 md:mb-16">
-            <p className="text-secondary font-bold text-xs md:text-sm tracking-widest uppercase mb-2">Customer Reviews</p>
-            <h2 className="text-4xl md:text-5xl font-headline font-bold">What Guests Are Saying</h2>
-          </div>
+      {/* ===================== TESTIMONIALS ===================== */}
+      <section className="overflow-hidden px-4 py-20 md:py-28">
+        <div className="mx-auto max-w-7xl">
+          <Reveal className="mb-12 text-center md:mb-16">
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-secondary md:text-sm">Customer Reviews</p>
+            <h2 className="font-headline text-4xl font-bold tracking-tight md:text-5xl">What Guests Are Saying</h2>
+          </Reveal>
 
-          <div className="overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0">
-            <div className="flex flex-nowrap gap-6 snap-x snap-mandatory p-2">
+          <div className="no-scrollbar -mx-4 overflow-x-auto px-4 sm:mx-0">
+            <div className="flex snap-x snap-mandatory flex-nowrap gap-5 p-2">
               {REVIEWS.map((review) => (
                 <div
                   key={review.id}
-                  className="glass-card p-8 rounded-[2.5rem] min-w-[280px] md:min-w-[400px] flex-shrink-0 snap-start"
+                  className="glass-card lift flex min-w-[280px] flex-shrink-0 snap-start flex-col rounded-[2rem] p-7 md:min-w-[400px]"
                 >
-                  <div className="flex text-secondary mb-4">
+                  <div className="mb-4 flex gap-0.5 text-secondary">
                     {[...Array(review.rating)].map((_, j) => (
-                      <Star key={j} className="w-4 h-4 fill-current" />
+                      <Star key={j} className="h-4 w-4 fill-current" />
                     ))}
                   </div>
-                  <p className="text-base md:text-lg italic mb-6 leading-relaxed text-foreground/80">
+                  <p className="mb-6 flex-1 text-base italic leading-relaxed text-foreground/85 md:text-lg">
                     &ldquo;{review.comment}&rdquo;
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold shrink-0">
+                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-[#00296b] font-bold text-white">
                       {review.author.charAt(0)}
                     </div>
                     <div>
-                      <p className="font-bold text-sm">{review.author}</p>
+                      <p className="text-sm font-bold">{review.author}</p>
                       <p className="text-xs text-muted-foreground">{review.role}</p>
                     </div>
                   </div>
@@ -186,30 +263,40 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== CTA ===== */}
-      <section className="py-20 px-4 bg-gradient-to-b from-background to-primary/5">
-        <div className="max-w-4xl mx-auto">
-          <div className="glass rounded-[3rem] p-8 md:p-16 text-center relative overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-72 h-72 bg-secondary/10 rounded-full blur-3xl" />
+      {/* ===================== CTA ===================== */}
+      <section className="px-4 pb-24 pt-8 md:pb-28">
+        <Reveal className="mx-auto max-w-5xl">
+          <div className="glass-strong grain relative overflow-hidden rounded-[2.5rem] p-8 text-center md:rounded-[3rem] md:p-16">
+            <Aurora
+              blobs={[
+                { color: 'var(--color-primary)', size: '26rem', top: '-8rem', left: '-6rem', opacity: 0.2 },
+                { color: 'var(--color-secondary)', size: '24rem', bottom: '-8rem', right: '-6rem', opacity: 0.2, delay: '-7s' },
+              ]}
+            />
             <div className="relative z-10 space-y-6">
-              <h2 className="text-3xl md:text-6xl font-headline font-bold leading-tight">
-                Hungry? <br />
-                <span className="text-primary">Order Now</span>
+              <h2 className="font-headline text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+                Hungry? <span className="text-gradient">Order Now</span>
               </h2>
-              <p className="text-base md:text-lg text-muted-foreground max-w-md mx-auto">
+              <p className="mx-auto max-w-md text-base text-muted-foreground md:text-lg">
                 Premium grill delivered across Abuja, any time of day.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button asChild size="lg" className="rounded-full h-12 md:h-14 px-8 md:px-10">
-                  <Link href="/menu">Place an Order</Link>
-                </Button>
-                <Button asChild size="lg" variant="secondary" className="rounded-full h-12 md:h-14 px-8 md:px-10">
-                  <a href={`tel:${CONTACT.phone}`}>Call {CONTACT.phoneShort}</a>
-                </Button>
+              <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
+                <Link
+                  href="/menu"
+                  className="sheen press inline-flex h-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[#00296b] px-9 text-base font-semibold text-white shadow-xl shadow-primary/25"
+                >
+                  Place an Order
+                </Link>
+                <a
+                  href={`tel:${CONTACT.phone}`}
+                  className="press inline-flex h-14 items-center justify-center rounded-full border border-border bg-card px-9 text-base font-semibold text-foreground transition-colors hover:bg-muted"
+                >
+                  Call {CONTACT.phoneShort}
+                </a>
               </div>
             </div>
           </div>
-        </div>
+        </Reveal>
       </section>
     </div>
   )

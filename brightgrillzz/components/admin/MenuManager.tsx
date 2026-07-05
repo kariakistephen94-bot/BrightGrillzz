@@ -109,7 +109,7 @@ export function MenuManager({ items }: { items: AdminMenuItem[] }) {
             <div key={item.id} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
               <div className="relative aspect-[16/10] overflow-hidden bg-muted">
                 {item.image ? (
-                  <Image src={item.image} alt={item.name} fill sizes="(max-width: 640px) 100vw, 33vw" className={cn('object-cover', !item.isAvailable && 'grayscale')} />
+                  <Image src={item.image} alt={item.name} fill unoptimized sizes="(max-width: 640px) 100vw, 33vw" className={cn('object-cover', !item.isAvailable && 'grayscale')} />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
                     <Utensils className="h-8 w-8 text-primary/30" />
@@ -207,10 +207,25 @@ function MenuItemModal({
     e.preventDefault()
     setError(null)
     const fd = new FormData(e.currentTarget)
+    const file = fd.get('image') as File | null
+    fd.delete('image') // uploaded separately, not through the Server Action
+
     startTransition(async () => {
-      const res = editing ? await updateMenuItem(editing.id, fd) : await createMenuItem(fd)
-      if (res?.ok) onClose()
-      else setError(res?.error ?? 'Something went wrong')
+      try {
+        if (file && file.size > 0) {
+          const up = new FormData()
+          up.append('file', file)
+          const r = await fetch('/api/admin/menu-image', { method: 'POST', body: up })
+          const j = await r.json()
+          if (!r.ok || !j.url) throw new Error(j.error || 'Image upload failed')
+          fd.set('image_url', j.url)
+        }
+        const res = editing ? await updateMenuItem(editing.id, fd) : await createMenuItem(fd)
+        if (res?.ok) onClose()
+        else setError(res?.error ?? 'Something went wrong')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Something went wrong')
+      }
     })
   }
 

@@ -3,25 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-const BUCKET = 'menu-images'
-
 // Menu writes use the service-role client (bypasses RLS) — the admin layout has
-// already confirmed the caller is an admin before these are reachable.
-
-async function uploadImage(file: File | null): Promise<string | null> {
-  if (!file || file.size === 0) return null
-  const admin = createAdminClient()
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
-  const path = `${crypto.randomUUID()}.${ext}`
-  const { error } = await admin.storage
-    .from(BUCKET)
-    .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false })
-  if (error) {
-    console.error('[menu] image upload failed:', error.message)
-    return null
-  }
-  return admin.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
-}
+// already confirmed the caller is an admin before these are reachable. Photos
+// are uploaded separately via /api/admin/menu-image; only the resulting URL
+// arrives here (as `image_url`).
 
 function parse(formData: FormData) {
   return {
@@ -41,7 +26,7 @@ export async function createMenuItem(formData: FormData) {
   const f = parse(formData)
   if (!f.name) return { ok: false, error: 'Name is required' }
 
-  const image = await uploadImage(formData.get('image') as File | null)
+  const image = String(formData.get('image_url') ?? '') || null
   const admin = createAdminClient()
   const { error } = await admin.from('menu_items').insert({
     name: f.name,
@@ -65,7 +50,7 @@ export async function updateMenuItem(id: string, formData: FormData) {
   const f = parse(formData)
   if (!f.name) return { ok: false, error: 'Name is required' }
 
-  const uploaded = await uploadImage(formData.get('image') as File | null)
+  const uploaded = String(formData.get('image_url') ?? '') || null
   const keepImage = String(formData.get('current_image') ?? '') || null
   const image = uploaded ?? keepImage
 
