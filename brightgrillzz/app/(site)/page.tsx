@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, type Variants } from 'framer-motion'
@@ -22,6 +23,75 @@ const heroContainer: Variants = {
 const heroItem: Variants = {
   hidden: { opacity: 0, y: 26 },
   show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } },
+}
+
+function StorefrontReviews() {
+  const [page, setPage] = useState(1)
+  const pageSize = 3
+  const totalPages = Math.ceil(REVIEWS.length / pageSize)
+  const currentReviews = REVIEWS.slice((page - 1) * pageSize, page * pageSize)
+
+  return (
+    <section className="overflow-hidden px-4 py-20 md:py-28">
+      <div className="mx-auto max-w-7xl">
+        <Reveal className="mb-12 text-center md:mb-16">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-secondary md:text-sm">Customer Reviews</p>
+          <h2 className="font-headline text-4xl font-bold tracking-tight md:text-5xl">What Guests Are Saying</h2>
+        </Reveal>
+
+        <div className="columns-1 gap-6 md:columns-2 lg:columns-3 min-h-[300px]">
+          {currentReviews.map((review) => (
+            <div
+              key={review.id}
+              className="glass-card relative mb-6 break-inside-avoid overflow-hidden rounded-[2rem] p-8 transition-all hover:-translate-y-1 hover:shadow-premium-sm"
+            >
+              {/* Decorative Quote Mark */}
+              <span className="absolute -left-2 -top-4 text-9xl font-serif text-primary/10 select-none">
+                &ldquo;
+              </span>
+
+              <div className="relative z-10 flex h-full flex-col">
+                <div className="mb-5 flex gap-1 text-amber-500">
+                  {[...Array(review.rating)].map((_, j) => (
+                    <Star key={j} className="h-4 w-4 fill-current" />
+                  ))}
+                </div>
+                
+                <p className="mb-8 flex-1 text-base leading-relaxed text-foreground/90">
+                  &ldquo;{review.comment}&rdquo;
+                </p>
+                
+                <div className="flex items-center gap-4 border-t border-border/50 pt-5 mt-auto">
+                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-primary/60 font-bold text-primary-foreground shadow-inner">
+                    {review.author.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">{review.author}</p>
+                    <p className="text-xs font-medium text-muted-foreground">{review.role}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center gap-2">
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i + 1)}
+                className={`h-2.5 rounded-full transition-all ${
+                  page === i + 1 ? 'bg-primary w-8' : 'bg-primary/20 w-2.5 hover:bg-primary/40'
+                }`}
+                aria-label={`Go to review page ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  )
 }
 
 export default function Home() {
@@ -225,43 +295,7 @@ export default function Home() {
       </section>
 
       {/* ===================== TESTIMONIALS ===================== */}
-      <section className="overflow-hidden px-4 py-20 md:py-28">
-        <div className="mx-auto max-w-7xl">
-          <Reveal className="mb-12 text-center md:mb-16">
-            <p className="mb-2 text-xs font-bold uppercase tracking-[0.25em] text-secondary md:text-sm">Customer Reviews</p>
-            <h2 className="font-headline text-4xl font-bold tracking-tight md:text-5xl">What Guests Are Saying</h2>
-          </Reveal>
-
-          <div className="no-scrollbar -mx-4 overflow-x-auto px-4 sm:mx-0">
-            <div className="flex snap-x snap-mandatory flex-nowrap gap-5 p-2">
-              {REVIEWS.map((review) => (
-                <div
-                  key={review.id}
-                  className="glass-card lift flex min-w-[280px] flex-shrink-0 snap-start flex-col rounded-[2rem] p-7 md:min-w-[400px]"
-                >
-                  <div className="mb-4 flex gap-0.5 text-secondary">
-                    {[...Array(review.rating)].map((_, j) => (
-                      <Star key={j} className="h-4 w-4 fill-current" />
-                    ))}
-                  </div>
-                  <p className="mb-6 flex-1 text-base italic leading-relaxed text-foreground/85 md:text-lg">
-                    &ldquo;{review.comment}&rdquo;
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-[#00296b] font-bold text-white">
-                      {review.author.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold">{review.author}</p>
-                      <p className="text-xs text-muted-foreground">{review.role}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <StorefrontReviews />
 
       {/* ===================== CTA ===================== */}
       <section className="px-4 pb-24 pt-8 md:pb-28">

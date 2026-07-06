@@ -74,11 +74,23 @@ export function ReviewPrompt({ defaultName = '' }: { defaultName?: string }) {
 
         {status === 'done' ? (
           <div className="text-center py-4">
-            <CheckCircle2 className="mx-auto mb-3 h-10 w-10 text-primary" />
-            <h3 className="text-lg font-bold">Thank you for your review! 🙏</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              We&rsquo;ve received it and it&rsquo;ll appear on our site once approved.
-            </p>
+            {rating < 4 ? (
+              <>
+                <div className="text-5xl mb-4">😠</div>
+                <h3 className="text-lg font-bold text-destructive">We're so sorry!</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  We apologize that your experience wasn't up to standard. Your feedback helps us improve.
+                </p>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="mx-auto mb-3 h-12 w-12 text-primary" />
+                <h3 className="text-lg font-bold">Thank you for your review! 🙏</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  We're so glad you enjoyed it. We hope to see you next time!
+                </p>
+              </>
+            )}
             <button
               onClick={() => setIsOpen(false)}
               className="mt-6 h-11 w-full rounded-full bg-muted font-semibold hover:bg-muted/80 transition-colors"
