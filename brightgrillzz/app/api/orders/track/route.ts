@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 // Public, read-only live status for a single order. Backed by the
 // `get_order_by_tracking` RPC (SECURITY DEFINER, granted to anon) so it exposes
-// only the one order — never the whole table. This is what keeps the customer
+// only the one order, never the whole table. This is what keeps the customer
 // tracking page in sync with the admin dashboard.
 export async function GET(request: Request) {
   const id = (new URL(request.url).searchParams.get('id') || '').trim()

@@ -1,5 +1,5 @@
 // Server-only reader for the live business settings. Must never be imported from
-// a Client Component — it reaches the RLS-locked `settings` row via the
+// a Client Component, it reaches the RLS-locked `settings` row via the
 // service-role admin client. The dynamic import keeps that client out of any
 // bundle that doesn't actually call this.
 import type { Settings } from '@/lib/supabase/types'

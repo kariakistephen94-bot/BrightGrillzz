@@ -1,6 +1,7 @@
 import {
   LayoutDashboard,
   ShoppingBag,
+  CalendarClock,
   UtensilsCrossed,
   Users,
   BarChart3,
@@ -21,7 +22,8 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
     title: 'Overview',
     items: [
       { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-      { label: 'Orders', href: '/admin/orders', icon: ShoppingBag, badge: '6' },
+      { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
+      { label: 'Reservations', href: '/admin/reservations', icon: CalendarClock },
       { label: 'Menu', href: '/admin/menu', icon: UtensilsCrossed },
     ],
   },

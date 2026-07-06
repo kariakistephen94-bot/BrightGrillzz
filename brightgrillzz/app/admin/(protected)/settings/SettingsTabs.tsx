@@ -344,7 +344,7 @@ function PaymentsSection({
         label="Paystack public key"
         name="paystack_public_key"
         placeholder="pk_live_…"
-        hint="Store your secret key in NEXT_PUBLIC_PAYSTACK_KEY (env var) — never edit it here."
+        hint="Store your secret key in NEXT_PUBLIC_PAYSTACK_KEY (env var), never edit it here."
         readOnly
       />
     </Section>

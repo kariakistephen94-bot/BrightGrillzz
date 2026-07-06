@@ -51,7 +51,8 @@ function ConfirmationContent() {
   }
 
   const whatsappUrl = getWhatsAppOrderUrl(order)
-  const paidOnline = getPaymentMethod(order) === 'paystack'
+  const isRequest = order.awaitingQuote === true
+  const paidOnline = !isRequest && getPaymentMethod(order) === 'paystack'
 
   return (
     <div className="pt-28 md:pt-36 pb-24 px-4 min-h-screen">
@@ -60,11 +61,17 @@ function ConfirmationContent() {
           <div className="w-20 h-20 bg-primary/15 rounded-full flex items-center justify-center mx-auto mb-6 border border-primary/30">
             <CheckCircle2 className="w-10 h-10 text-primary" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-headline font-bold mb-3">Order placed!</h1>
+          <h1 className="text-4xl md:text-5xl font-headline font-bold mb-3">
+            {isRequest ? 'Request received!' : 'Order placed!'}
+          </h1>
           <p className="text-muted-foreground">
-            {paidOnline
-              ? <>Thank you, {order.customer.fullName}. Your payment was received — we&apos;re on it!</>
-              : <>Thank you, {order.customer.fullName}. We&apos;ll confirm once payment is verified.</>}
+            {isRequest ? (
+              <>Thank you, {order.customer.fullName}. We&apos;ll send you a quote for today shortly.</>
+            ) : paidOnline ? (
+              <>Thank you, {order.customer.fullName}. Your payment was received, we&apos;re on it!</>
+            ) : (
+              <>Thank you, {order.customer.fullName}. We&apos;ll confirm once payment is verified.</>
+            )}
           </p>
         </div>
 
@@ -81,27 +88,36 @@ function ConfirmationContent() {
           </div>
 
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Total</span>
-              <span className="font-bold text-primary">{formatNaira(order.total)}</span>
-            </div>
+            {isRequest ? (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Price</span>
+                <span className="font-bold text-primary">Quote on the way</span>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total</span>
+                  <span className="font-bold text-primary">{formatNaira(order.total ?? 0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Payment</span>
+                  <span className="font-bold">{paymentMethodLabel(order)}</span>
+                </div>
+                {order.paymentReference && (
+                  <div className="flex justify-between items-center gap-3">
+                    <span className="text-muted-foreground shrink-0">Payment ref</span>
+                    <span className="flex items-center gap-1 min-w-0">
+                      <span className="font-bold font-mono text-xs truncate">{order.paymentReference}</span>
+                      <CopyButton value={order.paymentReference} label="Payment reference" className="h-7 w-7" />
+                    </span>
+                  </div>
+                )}
+              </>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Fulfillment</span>
               <span className="font-bold capitalize">{order.fulfillment.type}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Payment</span>
-              <span className="font-bold">{paymentMethodLabel(order)}</span>
-            </div>
-            {order.paymentReference && (
-              <div className="flex justify-between items-center gap-3">
-                <span className="text-muted-foreground shrink-0">Payment ref</span>
-                <span className="flex items-center gap-1 min-w-0">
-                  <span className="font-bold font-mono text-xs truncate">{order.paymentReference}</span>
-                  <CopyButton value={order.paymentReference} label="Payment reference" className="h-7 w-7" />
-                </span>
-              </div>
-            )}
             {order.fulfillment.type === 'delivery' && (
               <div className="flex gap-2 text-muted-foreground pt-1">
                 <MapPin className="w-4 h-4 shrink-0 text-primary" />
@@ -110,19 +126,21 @@ function ConfirmationContent() {
             )}
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-3">
-            <Button
-              variant="outline"
-              className="h-12 rounded-full font-bold"
-              onClick={handleDownload}
-              disabled={downloading}
-            >
-              {downloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-              {downloading ? 'Generating...' : 'Download receipt'}
-            </Button>
+          <div className={isRequest ? 'grid gap-3' : 'grid sm:grid-cols-2 gap-3'}>
+            {!isRequest && (
+              <Button
+                variant="outline"
+                className="h-12 rounded-full font-bold"
+                onClick={handleDownload}
+                disabled={downloading}
+              >
+                {downloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                {downloading ? 'Generating...' : 'Download receipt'}
+              </Button>
+            )}
             <Button asChild className="h-12 rounded-full font-bold">
               <Link href={`/track?id=${encodeURIComponent(order.trackingId)}`}>
-                Track order
+                Track {isRequest ? 'request' : 'order'}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>
@@ -131,14 +149,16 @@ function ConfirmationContent() {
 
         <div className="mt-8 glass-card rounded-[2rem] p-6 text-center">
           <p className="text-sm text-muted-foreground mb-4">
-            {paidOnline
-              ? 'Send us your order on WhatsApp so we can start grilling right away.'
-              : 'Notify us on WhatsApp so we can confirm your payment and start grilling.'}
+            {isRequest
+              ? 'Send your request on WhatsApp so we can get your quote to you faster.'
+              : paidOnline
+                ? 'Send us your order on WhatsApp so we can start grilling right away.'
+                : 'Notify us on WhatsApp so we can confirm your payment and start grilling.'}
           </p>
           <Button asChild className="w-full h-14 rounded-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-lg">
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
               <WhatsAppIcon className="w-5 h-5 mr-2" />
-              Notify us on WhatsApp
+              {isRequest ? 'Send request on WhatsApp' : 'Notify us on WhatsApp'}
             </a>
           </Button>
         </div>

@@ -14,14 +14,13 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/cart-context'
-import { formatNaira } from '@/lib/format'
 import { fetchPublicMenu, type MenuItem } from '@/lib/menu'
 import { MenuItemCard } from './MenuItemCard'
 
 const PAGE_SIZE = 8
 
 export function MenuExplorer({ scrollTargetId = 'menu' }: { scrollTargetId?: string }) {
-  const { itemCount, subtotal } = useCart()
+  const { itemCount } = useCart()
   const [items, setItems] = useState<MenuItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -88,7 +87,7 @@ export function MenuExplorer({ scrollTargetId = 'menu' }: { scrollTargetId?: str
       <div className="py-20 text-center">
         <Utensils className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" />
         <h3 className="text-2xl font-bold">Our menu is being prepared</h3>
-        <p className="mt-1 text-muted-foreground">Fresh dishes are coming soon — check back shortly.</p>
+        <p className="mt-1 text-muted-foreground">Fresh dishes are coming soon, check back shortly.</p>
       </div>
     )
   }
@@ -220,14 +219,14 @@ export function MenuExplorer({ scrollTargetId = 'menu' }: { scrollTargetId?: str
                   <ShoppingCart className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold opacity-80">
-                    {itemCount} {itemCount === 1 ? 'ITEM' : 'ITEMS'}
+                  <p className="text-xs font-bold opacity-80">Your request</p>
+                  <p className="font-bold">
+                    {itemCount} {itemCount === 1 ? 'item' : 'items'}
                   </p>
-                  <p className="font-bold">{formatNaira(subtotal)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold">View Cart</span>
+                <span className="font-bold">View request</span>
                 <ArrowRight className="w-5 h-5" />
               </div>
             </motion.div>

@@ -2,6 +2,8 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 export type OrderStatus =
+  | 'awaiting_quote'
+  | 'quoted'
   | 'pending'
   | 'preparing'
   | 'ready'
@@ -11,7 +13,11 @@ export type OrderStatus =
 
 /** Human label for a status (enum values can carry underscores). */
 export const statusLabel = (status: OrderStatus): string =>
-  status === 'out_for_delivery' ? 'Out for delivery' : status
+  status === 'out_for_delivery'
+    ? 'Out for delivery'
+    : status === 'awaiting_quote'
+      ? 'Awaiting quote'
+      : status
 
 /** Page title + subtitle with an optional actions slot on the right. */
 export function PageHeader({
@@ -39,6 +45,8 @@ export function PageHeader({
 }
 
 const orderStatusStyles: Record<OrderStatus, string> = {
+  awaiting_quote: 'bg-chart-3/15 text-chart-3',
+  quoted: 'bg-chart-4/15 text-chart-4',
   completed: 'bg-success/10 text-success',
   preparing: 'bg-primary/10 text-primary',
   ready: 'bg-chart-4/15 text-chart-4',

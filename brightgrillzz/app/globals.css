@@ -6,7 +6,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /*
-  BrightGrillzz design system — structure & component patterns ported from the
+  BrightGrillzz design system, structure & component patterns ported from the
   GrillsJunction template, re-skinned to the BrightGrillzz brand:
     • Navy  #001a4d  → primary
     • Burgundy #c41e3a → secondary / accent
@@ -49,7 +49,7 @@
   --color-sidebar-border: #e6e2da;
   --color-sidebar-accent: #f1efe9;
 
-  /* Chart palette — brand-led (navy → burgundy) with supporting hues */
+  /* Chart palette, brand-led (navy → burgundy) with supporting hues */
   --color-chart-1: #001a4d;
   --color-chart-2: #c41e3a;
   --color-chart-3: #d9a441;
@@ -85,8 +85,8 @@
 /* ---------- Dark theme ----------
    Dark mode is scoped to the admin area only. next-themes still toggles
    `.dark` on <html>, but the token overrides apply solely inside
-   `.admin-theme` (the /admin wrapper), so the public storefront — which was
-   never built for dark mode — always stays light. */
+   `.admin-theme` (the /admin wrapper), so the public storefront, which was
+   never built for dark mode, always stays light. */
 :root { color-scheme: light; }
 
 .dark .admin-theme {
@@ -124,7 +124,7 @@
   --color-sidebar-border: #1f2740;
   --color-sidebar-accent: #171d33;
 
-  /* Chart palette — brightened for dark backgrounds */
+  /* Chart palette, brightened for dark backgrounds */
   --color-chart-1: #5b82ff;
   --color-chart-2: #e8536b;
   --color-chart-3: #e6bd5c;

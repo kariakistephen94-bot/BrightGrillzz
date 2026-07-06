@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 //
 // Response shape: { ok: boolean, verified: boolean, reason?: string }
 //  - ok=false        → Paystack explicitly says the payment is not successful
-//                      (or the paid amount doesn't match) — the client blocks the order.
+//                      (or the paid amount doesn't match), the client blocks the order.
 //  - verified=false  → we could not check (no valid sk_* key, network error);
 //                      the client still records the order plus reference, matching
 //                      this app's trust-based bank-transfer flow.
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ ok: true, verified: true })
   } catch {
-    // Network failure reaching Paystack — don't strand the customer.
+    // Network failure reaching Paystack, don't strand the customer.
     return NextResponse.json({ ok: true, verified: false, reason: 'Could not reach Paystack' })
   }
 }

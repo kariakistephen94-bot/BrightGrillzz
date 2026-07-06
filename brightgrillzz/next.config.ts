@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-// Exact Supabase Storage host (from env) — most reliable for next/image.
+// Exact Supabase Storage host (from env), most reliable for next/image.
 const supabaseHostname = (() => {
   try {
     return process.env.NEXT_PUBLIC_SUPABASE_URL

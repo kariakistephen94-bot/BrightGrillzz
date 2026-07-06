@@ -1,6 +1,6 @@
 // Isomorphic (client + server safe) shape and defaults for the live business
 // settings that the admin edits under /admin/settings and that the storefront
-// reads. The actual DB read lives in `settings.server.ts` (server-only) — this
+// reads. The actual DB read lives in `settings.server.ts` (server-only), this
 // file holds just the type + fallbacks so client components can import it
 // without pulling in the service-role client.
 import { CONTACT } from './contact'
@@ -9,7 +9,7 @@ import { PAYMENT_DETAILS } from './payment'
 export interface SiteSettings {
   name: string
   tagline: string
-  /** Phone as entered in admin — used for both display and `tel:` links. */
+  /** Phone as entered in admin, used for both display and `tel:` links. */
   phone: string
   email: string
   address: string

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import type { Paged } from '@/lib/supabase/queries'
 import { useListNav } from './useListNav'
 
-// First page, last page, and the current page ±1 — with ellipses between gaps.
+// First page, last page, and the current page ±1, with ellipses between gaps.
 function pageWindow(current: number, count: number): (number | 'gap')[] {
   const wanted = new Set<number>([1, count])
   for (let p = current - 1; p <= current + 1; p++) {
@@ -34,7 +34,7 @@ export function Pagination({ page, pageCount, total, pageSize }: Props) {
 
   const from = (page - 1) * pageSize + 1
   const to = Math.min(total, page * pageSize)
-  // Page 1 is the bare URL (no ?page=1) — keeps links clean.
+  // Page 1 is the bare URL (no ?page=1), keeps links clean.
   const go = (p: number) => setParams({ page: p <= 1 ? null : p }, { resetPage: false })
 
   return (

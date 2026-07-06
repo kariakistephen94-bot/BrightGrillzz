@@ -4,13 +4,13 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from './config'
 
 /**
  * Refreshes the Supabase auth session on every request and does an *optimistic*
- * gate on /admin (a real role check still happens in the admin layout — see
+ * gate on /admin (a real role check still happens in the admin layout, see
  * the Next.js auth guide: proxy is for optimistic checks only).
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
 
-  // Without Supabase configured, don't touch anything — site stays usable.
+  // Without Supabase configured, don't touch anything, site stays usable.
   if (!isSupabaseConfigured) return response
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient, isServiceRoleConfigured } from '@/lib/supabase/admin'
 
 // Anonymous customers submit a review after ordering (no login). Inserted
-// unpublished — an admin approves it on /admin/reviews before it shows on site.
+// unpublished, an admin approves it on /admin/reviews before it shows on site.
 export async function POST(request: Request) {
   let body: unknown
   try {

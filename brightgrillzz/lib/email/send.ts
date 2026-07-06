@@ -6,6 +6,7 @@ import {
   isEmailConfigured,
 } from './config'
 import {
+  customMessageEmail,
   newOrderAlertEmail,
   orderConfirmationEmail,
   orderStatusEmail,
@@ -49,7 +50,7 @@ async function deliver(
 /** Customer confirmation + restaurant alert for a new order. */
 export async function sendOrderEmails(order: OrderEmailPayload): Promise<SendResult> {
   if (!isEmailConfigured) {
-    console.warn('[email] RESEND_API_KEY not set — skipping order emails')
+    console.warn('[email] RESEND_API_KEY not set, skipping order emails')
     return { sent: false, skipped: true }
   }
 
@@ -77,7 +78,7 @@ export async function sendOrderStatusEmail(
   payload: OrderStatusEmailPayload,
 ): Promise<SendResult> {
   if (!isEmailConfigured) {
-    console.warn('[email] RESEND_API_KEY not set — skipping status email')
+    console.warn('[email] RESEND_API_KEY not set, skipping status email')
     return { sent: false, skipped: true }
   }
   if (!to) return { sent: false, skipped: true }
@@ -88,12 +89,31 @@ export async function sendOrderStatusEmail(
   return result
 }
 
+/** A custom, admin-written message to a customer (order or reservation). */
+export async function sendCustomMessage(
+  to: string,
+  subject: string,
+  message: string,
+  toName = '',
+): Promise<SendResult> {
+  if (!isEmailConfigured) {
+    console.warn('[email] RESEND_API_KEY not set, skipping custom message')
+    return { sent: false, skipped: true }
+  }
+  if (!to) return { sent: false, skipped: true }
+  const result = await deliver(to, customMessageEmail({ toName, subject, message }), NOTIFICATION_EMAIL)
+  if (!result.sent && result.error) {
+    console.error('[email] custom message failed:', result.error)
+  }
+  return result
+}
+
 /** Restaurant alert for a reservation / contact request. */
 export async function sendReservationEmail(
   reservation: ReservationEmailPayload,
 ): Promise<SendResult> {
   if (!isEmailConfigured) {
-    console.warn('[email] RESEND_API_KEY not set — skipping reservation email')
+    console.warn('[email] RESEND_API_KEY not set, skipping reservation email')
     return { sent: false, skipped: true }
   }
   return deliver(

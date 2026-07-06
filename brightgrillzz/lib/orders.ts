@@ -23,12 +23,17 @@ export interface Order {
   customer: OrderCustomer
   fulfillment: OrderFulfillment
   items: CartItem[]
-  subtotal: number
-  total: number
-  paymentConfirmed: boolean
+  /**
+   * True for a request-a-quote order: the customer has picked items but no price
+   * has been set yet. Amounts and payment stay undefined until we send a quote.
+   */
+  awaitingQuote?: boolean
+  subtotal?: number
+  total?: number
+  paymentConfirmed?: boolean
   /** Optional because orders saved before Paystack existed default to bank transfer. */
   paymentMethod?: PaymentMethod
-  /** Paystack transaction reference — only present on Paystack orders. */
+  /** Paystack transaction reference, only present on Paystack orders. */
   paymentReference?: string
 }
 

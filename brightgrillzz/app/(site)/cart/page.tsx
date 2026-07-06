@@ -3,21 +3,22 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Trash2, Plus, Minus, ArrowRight, ShieldCheck, Truck, Clock, Utensils } from 'lucide-react'
+import { Trash2, Plus, Minus, ArrowRight, MessageCircle, Truck, Clock, Utensils } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/cart-context'
-import { formatNaira } from '@/lib/format'
 
 export default function CartPage() {
-  const { items, subtotal, updateQty, removeItem } = useCart()
-  const total = subtotal
+  const { items, itemCount, updateQty, removeItem } = useCart()
 
   return (
     <div className="pt-28 md:pt-36 pb-16 md:pb-24 px-3 sm:px-4 min-h-screen">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-headline font-bold mb-6 sm:mb-8 md:mb-12 px-1">
-          Your Basket
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-headline font-bold mb-2 px-1">
+          Your Request
         </h1>
+        <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8 md:mb-12 px-1">
+          Pick everything you would like. Prices move with the market, so we will send you a quote before you pay.
+        </p>
 
         <div className="grid lg:grid-cols-3 gap-5 sm:gap-6 md:gap-8 lg:gap-12">
           <div className="lg:col-span-2 space-y-3 sm:space-y-4 md:space-y-6">
@@ -48,9 +49,7 @@ export default function CartPage() {
                   <h3 className="text-sm sm:text-base md:text-lg font-bold mb-0.5 sm:mb-1 line-clamp-2 break-words">
                     {item.name}
                   </h3>
-                  <p className="text-primary font-bold text-xs sm:text-sm md:text-base">
-                    {formatNaira(item.price)}
-                  </p>
+                  <p className="text-muted-foreground text-xs sm:text-sm">Price on request</p>
                 </div>
 
                 <div className="flex items-center gap-2 sm:gap-3 md:gap-4 shrink-0">
@@ -90,7 +89,7 @@ export default function CartPage() {
             {items.length === 0 && (
               <div className="text-center py-12 sm:py-16 md:py-20 glass-card rounded-xl sm:rounded-2xl md:rounded-3xl">
                 <p className="text-muted-foreground mb-4 sm:mb-6 text-sm sm:text-base md:text-lg">
-                  Your basket is empty!
+                  Your request is empty!
                 </p>
                 <Button asChild className="rounded-full px-5 sm:px-8">
                   <Link href="/menu">Browse Menu</Link>
@@ -108,7 +107,7 @@ export default function CartPage() {
                     <p className="text-[9px] sm:text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       Delivery Time
                     </p>
-                    <p className="font-bold text-xs sm:text-sm md:text-base">35 - 45 Minutes</p>
+                    <p className="font-bold text-xs sm:text-sm md:text-base">35 to 45 Minutes</p>
                   </div>
                 </div>
 
@@ -130,31 +129,29 @@ export default function CartPage() {
           {items.length > 0 && (
             <div className="lg:col-span-1">
               <div className="glass-card rounded-xl sm:rounded-2xl md:rounded-[2.5rem] p-4 sm:p-5 md:p-6 lg:p-8 sticky top-28 lg:top-32 shadow-premium-sm">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 md:mb-8">Order Summary</h2>
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 md:mb-8">Request Summary</h2>
 
                 <div className="space-y-3 md:space-y-4 mb-6 md:mb-8">
                   <div className="flex justify-between text-muted-foreground text-xs sm:text-sm md:text-base">
-                    <span>Subtotal</span>
-                    <span className="font-bold">{formatNaira(subtotal)}</span>
+                    <span>Items</span>
+                    <span className="font-bold text-foreground">{itemCount}</span>
                   </div>
                   <div className="h-px bg-border my-2 sm:my-3 md:my-4" />
-                  <div className="flex justify-between items-center text-base sm:text-lg md:text-xl font-bold">
-                    <span>Total</span>
-                    <span className="text-primary font-headline text-lg sm:text-xl md:text-2xl">
-                      {formatNaira(total)}
-                    </span>
-                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    No payment now. Send your request and we will reply with a quote for today, then you can pay by
+                    transfer or online.
+                  </p>
                 </div>
 
                 <Button asChild className="w-full h-12 sm:h-14 md:h-16 rounded-full text-sm sm:text-base md:text-lg mb-3 sm:mb-4 md:mb-6 active:scale-95 transition-transform">
                   <Link href="/checkout">
-                    CHECKOUT NOW <ArrowRight className="ml-1 sm:ml-2 w-4 h-4 md:w-5 md:h-5" />
+                    CONTINUE <ArrowRight className="ml-1 sm:ml-2 w-4 h-4 md:w-5 md:h-5" />
                   </Link>
                 </Button>
 
                 <div className="flex items-center justify-center gap-2 text-[10px] sm:text-xs text-muted-foreground">
-                  <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 text-secondary" />
-                  Pay via bank transfer at checkout
+                  <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-secondary" />
+                  We reply with a quote, usually within a day
                 </div>
               </div>
             </div>

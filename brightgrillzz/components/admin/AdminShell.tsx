@@ -33,7 +33,7 @@ export function AdminShell({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Sidebar — fixed on desktop, slide-over on mobile */}
+      {/* Sidebar, fixed on desktop, slide-over on mobile */}
       <Sidebar
         mobileOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}
@@ -52,7 +52,7 @@ export function AdminShell({
         <Topbar onMenu={() => setMobileOpen(true)} user={user} previewMode={previewMode} />
         {previewMode && (
           <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-center text-xs font-medium text-amber-700 dark:text-amber-400">
-            Preview mode — set your Supabase keys in{' '}
+            Preview mode, set your Supabase keys in{' '}
             <code className="font-mono">.env.local</code> to enable authentication.
           </div>
         )}

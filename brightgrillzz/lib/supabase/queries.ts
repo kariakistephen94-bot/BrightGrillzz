@@ -4,6 +4,8 @@ import { createClient } from './server'
 // signed-in admin's session, so RLS (is_staff) governs what they can read.
 
 export type OrderStatus =
+  | 'awaiting_quote'
+  | 'quoted'
   | 'pending'
   | 'preparing'
   | 'ready'
@@ -121,7 +123,7 @@ function paginate(page: number | undefined, pageSize: number) {
 const pageCountOf = (total: number, pageSize: number) =>
   total > 0 ? Math.ceil(total / pageSize) : 0
 
-// PostgREST `.or()`/`.ilike()` treat commas, parens and % specially — strip them
+// PostgREST `.or()`/`.ilike()` treat commas, parens and % specially, strip them
 // from free-text search so a user's punctuation can't break the filter.
 function sanitizeSearch(q: string | undefined): string {
   return (q ?? '').replace(/[,()%*\\]/g, ' ').trim()
@@ -166,7 +168,7 @@ function mapOrder(o: RawOrder): AdminOrderRow {
   }))
   const summary =
     lineItems.length === 0
-      ? '—'
+      ? 'No items'
       : lineItems
           .map((it) => (it.qty > 1 ? `${it.name} ×${it.qty}` : it.name))
           .join(', ')
@@ -186,7 +188,7 @@ function mapOrder(o: RawOrder): AdminOrderRow {
     paymentConfirmed: o.payment_confirmed,
     paymentReference: o.payment_reference,
     fulfillment: o.fulfillment_type,
-    area: o.fulfillment_type === 'pickup' ? 'Kitchen pickup' : o.area ?? '—',
+    area: o.fulfillment_type === 'pickup' ? 'Kitchen pickup' : o.area ?? 'N/A',
     address: o.address,
     notes: o.notes,
     cancellationNote: o.cancellation_note,
@@ -253,6 +255,8 @@ export async function getOrdersPage(opts: OrdersQuery = {}): Promise<Paged<Admin
 
 export interface OrderStats {
   total: number
+  awaiting_quote: number
+  quoted: number
   pending: number
   preparing: number
   ready: number
@@ -269,6 +273,8 @@ export async function getOrderStats(): Promise<OrderStats> {
   const d = (data ?? {}) as Record<string, number>
   return {
     total: d.total ?? 0,
+    awaiting_quote: d.awaiting_quote ?? 0,
+    quoted: d.quoted ?? 0,
     pending: d.pending ?? 0,
     preparing: d.preparing ?? 0,
     ready: d.ready ?? 0,
@@ -622,7 +628,7 @@ export interface MenuFacets {
 }
 
 // Distinct categories/badges (for the filter tabs + modal dropdowns) and the
-// whole-menu counts — independent of the current page. Menus are small, so the
+// whole-menu counts, independent of the current page. Menus are small, so the
 // two-column scan for distinct values is cheap.
 export async function getMenuFacets(): Promise<MenuFacets> {
   const supabase = await createClient()
@@ -635,4 +641,113 @@ export async function getMenuFacets(): Promise<MenuFacets> {
   const badges = Array.from(new Set(rows.map((r) => r.badge).filter(Boolean))) as string[]
   const s = (statsRes.data ?? {}) as Record<string, number>
   return { categories, badges, total: s.total ?? 0, available: s.available ?? 0 }
+}
+
+/* ---------------------------- reservations ----------------------------- */
+
+export type ReservationStatus = 'new' | 'confirmed' | 'closed' | 'cancelled'
+
+export interface AdminReservationRow {
+  id: string
+  name: string
+  phone: string
+  email: string
+  eventType: string
+  location: string
+  eventAt: string | null
+  eventAtLabel: string
+  guests: number | null
+  package: string
+  notes: string
+  status: ReservationStatus
+  placed: string
+  createdAt: string
+}
+
+type RawReservation = {
+  id: string
+  name: string
+  phone: string
+  email: string | null
+  event_type: string | null
+  location: string | null
+  event_at: string | null
+  guests: number | null
+  package: string | null
+  notes: string | null
+  status: string | null
+  created_at: string
+}
+
+const mapReservation = (r: RawReservation): AdminReservationRow => ({
+  id: r.id,
+  name: r.name,
+  phone: r.phone,
+  email: r.email ?? '',
+  eventType: r.event_type ?? '',
+  location: r.location ?? '',
+  eventAt: r.event_at,
+  eventAtLabel: r.event_at ? fmtDateTime(r.event_at) : 'Not set',
+  guests: r.guests,
+  package: r.package ?? '',
+  notes: r.notes ?? '',
+  status: (r.status as ReservationStatus) ?? 'new',
+  placed: fmtDateTime(r.created_at),
+  createdAt: r.created_at,
+})
+
+export interface ReservationsQuery {
+  page?: number
+  q?: string
+  status?: ReservationStatus | 'all'
+}
+
+const RESERVATION_SELECT =
+  'id, name, phone, email, event_type, location, event_at, guests, package, notes, status, created_at'
+
+export async function getReservationsPage(opts: ReservationsQuery = {}): Promise<Paged<AdminReservationRow>> {
+  const supabase = await createClient()
+  const { from, to, page, pageSize } = paginate(opts.page, ADMIN_PAGE_SIZE)
+
+  let query = supabase
+    .from('reservations')
+    .select(RESERVATION_SELECT, { count: 'exact' })
+    .order('created_at', { ascending: false })
+
+  if (opts.status && opts.status !== 'all') query = query.eq('status', opts.status)
+
+  const q = sanitizeSearch(opts.q)
+  if (q) query = query.or(`name.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`)
+
+  const { data, error, count } = await query.range(from, to)
+  if (error || !data) return emptyPage<AdminReservationRow>(page)
+  const total = count ?? 0
+  return {
+    rows: (data as unknown as RawReservation[]).map(mapReservation),
+    total,
+    page,
+    pageSize,
+    pageCount: pageCountOf(total, pageSize),
+  }
+}
+
+export interface ReservationStats {
+  total: number
+  new: number
+  confirmed: number
+  closed: number
+  cancelled: number
+}
+
+export async function getReservationStats(): Promise<ReservationStats> {
+  const supabase = await createClient()
+  const { data } = await supabase.from('admin_reservation_stats').select('*').single()
+  const d = (data ?? {}) as Record<string, number>
+  return {
+    total: d.total ?? 0,
+    new: d.new ?? 0,
+    confirmed: d.confirmed ?? 0,
+    closed: d.closed ?? 0,
+    cancelled: d.cancelled ?? 0,
+  }
 }

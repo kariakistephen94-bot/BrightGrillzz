@@ -5,13 +5,13 @@ import { Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { cn } from '@/lib/utils'
 
-/** Compact light/dark switch — Apple-style pill with an animated thumb. */
+/** Compact light/dark switch, Apple-style pill with an animated thumb. */
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
   React.useEffect(() => setMounted(true), [])
 
-  // Until mounted, resolvedTheme is unknown — keep the first client render
+  // Until mounted, resolvedTheme is unknown, keep the first client render
   // identical to the server render (isDark=false) to avoid a hydration mismatch
   // that would otherwise leave this button's onClick unattached.
   const isDark = mounted && resolvedTheme === 'dark'

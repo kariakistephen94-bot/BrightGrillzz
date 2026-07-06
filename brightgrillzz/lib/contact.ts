@@ -10,6 +10,8 @@ export const CONTACT = {
   instagram: 'https://www.instagram.com/brightgrillzz/',
   facebook: 'https://web.facebook.com/Brightgrillzz',
   whatsapp: 'https://wa.me/2348181070919',
+  youtube: 'https://www.youtube.com/@brightgrillzzglobal/videos',
+  tiktok: 'https://www.tiktok.com/@brightgrillzz',
   maps: 'https://maps.app.goo.gl/j2EAceh2XF4a6ud78',
   hours: 'Open 24/7',
   rating: '4.4',
@@ -52,7 +54,7 @@ export const FEATURED_DISHES: MenuItem[] = [
   {
     id: 1,
     name: 'Royal Platter',
-    description: 'A lavish selection of flame-grilled proteins, sides and dips — built to share.',
+    description: 'A lavish selection of flame-grilled proteins, sides and dips, built to share.',
     price: 18000,
     priceLabel: '₦18,000 – ₦25,000',
     rating: 4.9,
@@ -215,7 +217,7 @@ export const STATS = [
   { value: 'A-List', label: 'Clientele' },
 ]
 
-// Reviews (sourced from Google — verified guests only)
+// Reviews (sourced from Google, verified guests only)
 export const REVIEWS = [
   {
     id: 1,
@@ -229,21 +231,21 @@ export const REVIEWS = [
     id: 2,
     author: 'Naf2 Isa',
     role: 'Local Guide · 91 reviews',
-    comment: 'Nice chicken. Premium quality with perfect seasoning — every bite is worth it.',
+    comment: 'Nice chicken. Premium quality with perfect seasoning, every bite is worth it.',
     rating: 5,
   },
   {
     id: 3,
     author: 'yahaya james',
     role: 'Verified Guest',
-    comment: 'The best place to be — everything is readily available. Excellent service and amazing food!',
+    comment: 'The best place to be, everything is readily available. Excellent service and amazing food!',
     rating: 5,
   },
   {
     id: 4,
     author: 'Omar Shamsudeen',
     role: 'Local Guide · 15 reviews',
-    comment: 'Tasty grill with amazing flavours. Worth every naira — highly recommended!',
+    comment: 'Tasty grill with amazing flavours. Worth every naira, highly recommended!',
     rating: 5,
   },
   {

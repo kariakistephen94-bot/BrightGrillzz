@@ -9,5 +9,5 @@ export const PAYMENT_DETAILS = {
   accountName: 'Brightgrillzz Global Ltd',
 } as const
 
-// Digits only, international format (no "+", no spaces) — used for wa.me links.
+// Digits only, international format (no "+", no spaces), used for wa.me links.
 export const WHATSAPP_NUMBER = '2348181070919'

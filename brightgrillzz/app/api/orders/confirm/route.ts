@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 // Customer-facing: confirm an out-for-delivery order has arrived. Backed by the
 // `confirm_delivery` RPC (SECURITY DEFINER, granted to anon) which only flips an
-// order that is currently out_for_delivery to completed — nothing else.
+// order that is currently out_for_delivery to completed, nothing else.
 export async function POST(request: Request) {
   let body: unknown
   try {

@@ -47,6 +47,8 @@ function parseLive(raw: unknown): LiveOrder | null {
 
 // Where each status sits on the 4-step timeline, and the progress bar %.
 const STATUS_STEP: Record<OrderStatus, { step: number; progress: number }> = {
+  awaiting_quote: { step: 1, progress: 12 },
+  quoted: { step: 1, progress: 22 },
   pending: { step: 1, progress: 20 },
   preparing: { step: 2, progress: 45 },
   ready: { step: 3, progress: 70 },
@@ -88,7 +90,7 @@ function TrackContent() {
     }
   }
 
-  // Fetch the live DB status. No setState here — callers own the loading UI.
+  // Fetch the live DB status. No setState here, callers own the loading UI.
   const fetchLive = useCallback(async (id: string): Promise<LiveOrder | null> => {
     try {
       const res = await fetch(`/api/orders/track?id=${encodeURIComponent(id)}`, { cache: 'no-store' })
@@ -227,7 +229,7 @@ function TrackContent() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 mb-6 text-sm text-muted-foreground">
-                <span>{fulfillment === 'delivery' ? 'Delivery' : 'Pickup'} · {formatNaira(total)}</span>
+                <span>{fulfillment === 'delivery' ? 'Delivery' : 'Pickup'} · {total > 0 ? formatNaira(total) : 'Quote pending'}</span>
                 {paymentMethod === 'bank_transfer' && (
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createAdminClient } from '@/lib/supabase/admin'
 
-// Menu writes use the service-role client (bypasses RLS) — the admin layout has
+// Menu writes use the service-role client (bypasses RLS), the admin layout has
 // already confirmed the caller is an admin before these are reachable. Photos
 // are uploaded separately via /api/admin/menu-image; only the resulting URL
 // arrives here (as `image_url`).

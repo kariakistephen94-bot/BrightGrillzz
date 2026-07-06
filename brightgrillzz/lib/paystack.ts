@@ -56,7 +56,7 @@ function loadPaystackScript(): Promise<void> {
 
 export interface PayWithPaystackInput {
   email: string
-  /** Order total in naira — converted to kobo for Paystack. */
+  /** Order total in naira, converted to kobo for Paystack. */
   amountNaira: number
   metadata?: Record<string, unknown>
 }
@@ -99,7 +99,7 @@ export async function payWithPaystack({ email, amountNaira, metadata }: PayWithP
 /**
  * Asks our API route to confirm the transaction against Paystack's records.
  * Returns false only when Paystack explicitly reports the payment as not
- * successful — network hiccups or a missing secret key never block the order,
+ * successful, network hiccups or a missing secret key never block the order,
  * since the reference is stored for manual reconciliation.
  */
 export async function verifyPaystackPayment(reference: string, amountNaira: number): Promise<boolean> {

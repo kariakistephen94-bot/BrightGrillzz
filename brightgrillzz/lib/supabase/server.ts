@@ -21,7 +21,7 @@ export async function createClient() {
             cookieStore.set(name, value, options),
           )
         } catch {
-          // Called from a Server Component where cookies are read-only — safe to
+          // Called from a Server Component where cookies are read-only, safe to
           // ignore, the proxy refreshes the session cookie on the next request.
         }
       },

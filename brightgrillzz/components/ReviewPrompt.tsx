@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { CheckCircle2, Loader2, Star, X } from 'lucide-react'
 
-/** Post-order review prompt. Anonymous — no login required. */
+/** Post-order review prompt. Anonymous, no login required. */
 export function ReviewPrompt({ defaultName = '' }: { defaultName?: string }) {
   const [name, setName] = React.useState(defaultName)
   const [rating, setRating] = React.useState(0)
@@ -102,7 +102,7 @@ export function ReviewPrompt({ defaultName = '' }: { defaultName?: string }) {
           <>
             <h3 className="text-lg font-bold pr-8">Enjoyed your order? Leave a review</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Your feedback helps other food lovers — it only takes a moment.
+              Your feedback helps other food lovers, it only takes a moment.
             </p>
 
             <form onSubmit={submit} className="mt-4 space-y-4">

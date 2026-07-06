@@ -12,8 +12,12 @@ export function buildOrderWhatsAppMessage(
   order: Order,
   bank: BankDetails = PAYMENT_DETAILS,
 ): string {
+  const isRequest = order.awaitingQuote === true
+
   const lines = [
-    'Hello BrightGrillzz! I have placed an order.',
+    isRequest
+      ? 'Hello BrightGrillzz! I would like a quote for this request.'
+      : 'Hello BrightGrillzz! I have placed an order.',
     '',
     `Tracking ID: ${order.trackingId}`,
     `Name: ${order.customer.fullName}`,
@@ -33,8 +37,13 @@ export function buildOrderWhatsAppMessage(
 
   lines.push('', 'Items:')
   order.items.forEach((item) => {
-    lines.push(`• ${item.name} × ${item.qty} — ${formatNaira(item.price * item.qty)}`)
+    lines.push(`• ${item.name} × ${item.qty}`)
   })
+
+  if (isRequest) {
+    lines.push('', 'Please send me a quote for today. Thank you!')
+    return lines.join('\n')
+  }
 
   const paymentLine =
     getPaymentMethod(order) === 'paystack'
@@ -43,8 +52,7 @@ export function buildOrderWhatsAppMessage(
 
   lines.push(
     '',
-    `Subtotal: ${formatNaira(order.subtotal)}`,
-    `Total: ${formatNaira(order.total)}`,
+    `Total: ${formatNaira(order.total ?? 0)}`,
     '',
     paymentLine,
     '',
@@ -60,4 +68,23 @@ export function getWhatsAppOrderUrl(
 ): string {
   const text = encodeURIComponent(buildOrderWhatsAppMessage(order, bank))
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${text}`
+}
+
+/** Normalises a Nigerian phone number to wa.me international format (no +). */
+export function normalizeWhatsAppNumber(phone: string): string {
+  const digits = (phone || '').replace(/\D/g, '')
+  if (!digits) return ''
+  if (digits.startsWith('234')) return digits
+  if (digits.startsWith('0')) return '234' + digits.slice(1)
+  return digits
+}
+
+/**
+ * Deep link that opens WhatsApp to a specific customer with a prefilled custom
+ * message. Used by the admin to message a customer about an order or reservation.
+ */
+export function waLink(phone: string, message: string): string {
+  const number = normalizeWhatsAppNumber(phone)
+  const text = encodeURIComponent(message)
+  return number ? `https://wa.me/${number}?text=${text}` : `https://wa.me/?text=${text}`
 }

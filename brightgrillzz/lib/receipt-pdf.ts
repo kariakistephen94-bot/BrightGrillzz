@@ -114,7 +114,7 @@ export async function downloadOrderReceipt(
   let yR = y + 6
 
   text('bold', 10.5, DARK)
-  doc.text(order.customer.fullName || '—', colL, yL)
+  doc.text(order.customer.fullName || 'N/A', colL, yL)
   yL += 5
   text('normal', 9.5, MUTED)
   if (order.customer.phone) {
@@ -192,9 +192,9 @@ export async function downloadOrderReceipt(
     text('normal', 9.5, DARK)
     doc.text(lines, nameX, baseline)
     doc.text(String(item.qty), qtyRight, baseline, { align: 'right' })
-    doc.text(money(item.price), unitRight, baseline, { align: 'right' })
+    doc.text(money(item.price ?? 0), unitRight, baseline, { align: 'right' })
     text('bold', 9.5, DARK)
-    doc.text(money(item.price * item.qty), amountRight, baseline, { align: 'right' })
+    doc.text(money((item.price ?? 0) * item.qty), amountRight, baseline, { align: 'right' })
 
     y += rowH
   })
@@ -213,12 +213,12 @@ export async function downloadOrderReceipt(
     doc.text(value, amountRight, y, { align: 'right' })
   }
 
-  totalRow('Subtotal', money(order.subtotal), false, DARK, 10)
+  totalRow('Subtotal', money(order.subtotal ?? 0), false, DARK, 10)
   y += 5
   doc.setDrawColor(LINE[0], LINE[1], LINE[2])
   doc.line(totalsLabelX, y, amountRight, y)
   y += 7
-  totalRow('TOTAL', money(order.total), true, BURGUNDY, 13)
+  totalRow('TOTAL', money(order.total ?? 0), true, BURGUNDY, 13)
   y += 14
 
   // ===================== PAYMENT DETAILS BOX =====================

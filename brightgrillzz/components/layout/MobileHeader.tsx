@@ -7,7 +7,7 @@ import { Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CONTACT } from '@/lib/contact'
 
-/** Mobile top header — frosted pill that tucks away on scroll-down. */
+/** Mobile top header, frosted pill that tucks away on scroll-down. */
 export default function MobileHeader() {
   const [hidden, setHidden] = useState(false)
   const [scrolled, setScrolled] = useState(false)

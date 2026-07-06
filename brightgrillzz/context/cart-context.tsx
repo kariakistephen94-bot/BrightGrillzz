@@ -12,26 +12,27 @@ import {
 export interface CartItem {
   /** The underlying menu item id (Supabase uuid). */
   id: string
-  /** Unique per cart line (same as id — BrightGrillzz dishes have no extras). */
+  /** Unique per cart line (same as id, BrightGrillzz dishes have no extras). */
   cartId: string
   name: string
-  /** Unit price. */
-  price: number
   qty: number
   image: string
+  /**
+   * Optional. The request-a-quote flow never sets a price (the customer never
+   * sees one); it only exists so legacy/quoted-order code keeps compiling.
+   */
+  price?: number
 }
 
 type AddItemInput = {
   id: string
   name: string
-  price: number
   image: string
 }
 
 interface CartContextValue {
   items: CartItem[]
   itemCount: number
-  subtotal: number
   addItem: (item: AddItemInput, qty?: number) => void
   removeItem: (cartId: string) => void
   updateQty: (cartId: string, qty: number) => void
@@ -42,13 +43,11 @@ const CartContext = createContext<CartContextValue | null>(null)
 const STORAGE_KEY = 'brightgrillzz-cart'
 
 function normalizeItem(raw: Partial<CartItem> & { id: string | number }): CartItem {
-  const price = Number(raw.price) || 0
   const id = String(raw.id)
   return {
     id,
     cartId: raw.cartId ?? id,
     name: raw.name ?? '',
-    price,
     qty: Number(raw.qty) || 1,
     image: raw.image ?? '',
   }
@@ -103,11 +102,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const clearCart = useCallback(() => setItems([]), [])
 
-  const subtotal = useMemo(
-    () => items.reduce((sum, i) => sum + i.price * i.qty, 0),
-    [items],
-  )
-
   const itemCount = useMemo(
     () => items.reduce((sum, i) => sum + i.qty, 0),
     [items],
@@ -117,13 +111,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     () => ({
       items,
       itemCount,
-      subtotal,
       addItem,
       removeItem,
       updateQty,
       clearCart,
     }),
-    [items, itemCount, subtotal, addItem, removeItem, updateQty, clearCart],
+    [items, itemCount, addItem, removeItem, updateQty, clearCart],
   )
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

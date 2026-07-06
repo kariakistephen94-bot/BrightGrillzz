@@ -26,7 +26,7 @@ export default async function AdminPlaceholderPage({
       </h1>
       <p className="mt-2 max-w-sm text-sm text-muted-foreground">
         This section is coming soon. The dashboard is the only page wired up for
-        now — the rest of the admin is next.
+        now, the rest of the admin is next.
       </p>
       <Link
         href="/admin"

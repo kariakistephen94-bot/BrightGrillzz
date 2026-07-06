@@ -88,7 +88,7 @@ export function MenuManager({
           </div>
           <h2 className="mt-5 text-lg font-semibold text-foreground">No dishes yet</h2>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            Add your first menu item — it&rsquo;ll show up on the storefront right away.
+            Add your first menu item, it&rsquo;ll show up on the storefront right away.
           </p>
           <button
             onClick={openAdd}
@@ -228,7 +228,7 @@ function MenuItemModal({
       setLocalCategories((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]))
       setCategory(trimmed)
     } else {
-      setCategory(prevCategory) // nothing typed — restore the previous choice
+      setCategory(prevCategory) // nothing typed, restore the previous choice
     }
     setAddingCategory(false)
   }
@@ -405,7 +405,7 @@ function MenuItemModal({
           </div>
 
           <Field label="Description">
-            <textarea name="description" defaultValue={editing?.description} rows={3} className={cn(inputCls, 'h-auto py-2')} placeholder="Flame-grilled proteins, sides and dips — built to share." />
+            <textarea name="description" defaultValue={editing?.description} rows={3} className={cn(inputCls, 'h-auto py-2')} placeholder="Flame-grilled proteins, sides and dips, built to share." />
           </Field>
 
           <label className="flex items-center gap-2.5">

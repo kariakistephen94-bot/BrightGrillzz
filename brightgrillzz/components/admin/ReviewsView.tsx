@@ -45,7 +45,7 @@ export function ReviewsView({
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Reviews" description="What guests are saying — and what shows on your site." />
+      <PageHeader title="Reviews" description="What guests are saying, and what shows on your site." />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card p-6 text-center shadow-sm">

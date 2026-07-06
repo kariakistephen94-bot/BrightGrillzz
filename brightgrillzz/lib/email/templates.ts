@@ -3,7 +3,8 @@ import { CONTACT } from '@/lib/contact'
 export interface OrderEmailItem {
   name: string
   qty: number
-  price: number
+  /** Undefined on a request-a-quote order (no price yet). */
+  price?: number
 }
 
 export interface OrderEmailPayload {
@@ -17,8 +18,10 @@ export interface OrderEmailPayload {
     notes?: string
   }
   items: OrderEmailItem[]
-  subtotal: number
-  total: number
+  /** True for a request-a-quote order: no amounts or payment yet. */
+  awaitingQuote?: boolean
+  subtotal?: number
+  total?: number
   paymentMethod?: 'bank_transfer' | 'paystack'
   paymentReference?: string
 }
@@ -92,6 +95,20 @@ function shell(preheader: string, bodyHtml: string): string {
 </html>`
 }
 
+/** Item list with no prices, used for request-a-quote orders. */
+function itemsListNoPrice(items: OrderEmailItem[]): string {
+  const rows = items
+    .map(
+      (it) => `<tr>
+        <td style="padding:10px 0;border-bottom:1px solid #eee;font-size:14px;">
+          ${esc(it.name)} <span style="color:#6b6b76;">× ${it.qty}</span>
+        </td>
+      </tr>`,
+    )
+    .join('')
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 4px;">${rows}</table>`
+}
+
 function itemsTable(items: OrderEmailItem[], subtotal: number, total: number): string {
   const rows = items
     .map(
@@ -100,7 +117,7 @@ function itemsTable(items: OrderEmailItem[], subtotal: number, total: number): s
           ${esc(it.name)} <span style="color:#6b6b76;">× ${it.qty}</span>
         </td>
         <td style="padding:10px 0;border-bottom:1px solid #eee;font-size:14px;text-align:right;white-space:nowrap;">
-          ${naira(it.price * it.qty)}
+          ${naira((it.price ?? 0) * it.qty)}
         </td>
       </tr>`,
     )
@@ -132,9 +149,50 @@ function fulfillmentBlock(o: OrderEmailPayload): string {
   return `<div style="font-size:14px;">${where}</div>${notes}`
 }
 
-/** Customer-facing order confirmation. */
+/** Customer-facing order confirmation (or request acknowledgement). */
 export function orderConfirmationEmail(o: OrderEmailPayload): BuiltEmail {
   const firstName = o.customer.fullName.split(/\s+/)[0] || 'there'
+
+  // Request-a-quote acknowledgement: no prices, no payment, a quote is coming.
+  if (o.awaitingQuote) {
+    const body = `
+      <h1 style="margin:0 0 6px;font-size:22px;">Thanks, ${esc(firstName)}! 🔥</h1>
+      <p style="margin:0 0 20px;color:#6b6b76;font-size:14px;line-height:1.6;">
+        We&rsquo;ve received your request. We&rsquo;ll review it and send you a quote for today shortly, then you can pay by transfer or online.
+      </p>
+
+      <div style="background:#faf8f5;border:1px solid #e6e2da;border-radius:14px;padding:14px 16px;margin-bottom:20px;">
+        <div style="font-size:12px;color:#6b6b76;text-transform:uppercase;letter-spacing:.5px;">Tracking ID</div>
+        <div style="font-size:20px;font-weight:700;color:${NAVY};letter-spacing:.5px;">${esc(o.trackingId)}</div>
+      </div>
+
+      <h2 style="margin:0 0 4px;font-size:15px;">Your request</h2>
+      ${itemsListNoPrice(o.items)}
+
+      <h2 style="margin:24px 0 4px;font-size:15px;">Fulfillment</h2>
+      ${fulfillmentBlock(o)}
+
+      <a href="${esc(CONTACT.whatsapp)}" style="display:inline-block;margin-top:26px;background:${NAVY};color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:999px;">
+        Message us on WhatsApp
+      </a>
+    `
+    return {
+      subject: `We got your request ${o.trackingId}, a quote is on the way`,
+      html: shell(`Request ${o.trackingId} received, quote to follow`, body),
+      text: [
+        `Thanks, ${firstName}! We&rsquo;ve received your BrightGrillzz request.`.replace(/&rsquo;/g, "'"),
+        `We'll send you a quote for today shortly.`,
+        `Tracking ID: ${o.trackingId}`,
+        '',
+        ...o.items.map((it) => `- ${it.name} x${it.qty}`),
+        '',
+        o.fulfillment.type === 'delivery'
+          ? `Delivery to ${o.fulfillment.address ?? ''} ${o.fulfillment.area ?? ''}`.trim()
+          : 'Pickup at our kitchen',
+      ].join('\n'),
+    }
+  }
+
   const body = `
     <h1 style="margin:0 0 6px;font-size:22px;">Thanks, ${esc(firstName)}! 🔥</h1>
     <p style="margin:0 0 20px;color:#6b6b76;font-size:14px;line-height:1.6;">
@@ -147,7 +205,7 @@ export function orderConfirmationEmail(o: OrderEmailPayload): BuiltEmail {
     </div>
 
     <h2 style="margin:0 0 4px;font-size:15px;">Order summary</h2>
-    ${itemsTable(o.items, o.subtotal, o.total)}
+    ${itemsTable(o.items, o.subtotal ?? 0, o.total ?? 0)}
 
     <h2 style="margin:24px 0 4px;font-size:15px;">Fulfillment</h2>
     ${fulfillmentBlock(o)}
@@ -163,14 +221,14 @@ export function orderConfirmationEmail(o: OrderEmailPayload): BuiltEmail {
   `
   return {
     subject: `Your BrightGrillzz order ${o.trackingId} is confirmed`,
-    html: shell(`Order ${o.trackingId} confirmed — ${naira(o.total)}`, body),
+    html: shell(`Order ${o.trackingId} confirmed, ${naira(o.total ?? 0)}`, body),
     text: [
       `Thanks, ${firstName}! Your BrightGrillzz order is confirmed.`,
       `Tracking ID: ${o.trackingId}`,
       '',
-      ...o.items.map((it) => `- ${it.name} x${it.qty}  ${naira(it.price * it.qty)}`),
-      `Subtotal: ${naira(o.subtotal)}`,
-      `Total: ${naira(o.total)}`,
+      ...o.items.map((it) => `- ${it.name} x${it.qty}  ${naira((it.price ?? 0) * it.qty)}`),
+      `Subtotal: ${naira(o.subtotal ?? 0)}`,
+      `Total: ${naira(o.total ?? 0)}`,
       '',
       o.fulfillment.type === 'delivery'
         ? `Delivery to ${o.fulfillment.address ?? ''} ${o.fulfillment.area ?? ''}`.trim()
@@ -180,17 +238,22 @@ export function orderConfirmationEmail(o: OrderEmailPayload): BuiltEmail {
   }
 }
 
-/** Internal alert to the restaurant that a new order landed. */
+/** Internal alert to the restaurant that a new order (or quote request) landed. */
 export function newOrderAlertEmail(o: OrderEmailPayload): BuiltEmail {
+  const isRequest = o.awaitingQuote === true
+  const badge = isRequest ? 'New request, needs a quote' : 'New order'
+  const heading = isRequest ? esc(o.trackingId) : `${esc(o.trackingId)} · ${naira(o.total ?? 0)}`
+  const subline = isRequest
+    ? `${esc(o.fulfillment.type === 'delivery' ? 'Delivery' : 'Pickup')} · Awaiting quote`
+    : `${esc(o.fulfillment.type === 'delivery' ? 'Delivery' : 'Pickup')} · ${esc(paymentLabel(o.paymentMethod))}`
+
   const body = `
-    <div style="display:inline-block;background:${BURGUNDY}1a;color:${BURGUNDY};font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;text-transform:uppercase;letter-spacing:.5px;">New order</div>
-    <h1 style="margin:12px 0 6px;font-size:22px;">${esc(o.trackingId)} · ${naira(o.total)}</h1>
-    <p style="margin:0 0 20px;color:#6b6b76;font-size:14px;">
-      ${esc(o.fulfillment.type === 'delivery' ? 'Delivery' : 'Pickup')} · ${esc(paymentLabel(o.paymentMethod))}
-    </p>
+    <div style="display:inline-block;background:${BURGUNDY}1a;color:${BURGUNDY};font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;text-transform:uppercase;letter-spacing:.5px;">${esc(badge)}</div>
+    <h1 style="margin:12px 0 6px;font-size:22px;">${heading}</h1>
+    <p style="margin:0 0 20px;color:#6b6b76;font-size:14px;">${subline}</p>
 
     <h2 style="margin:0 0 4px;font-size:15px;">Items</h2>
-    ${itemsTable(o.items, o.subtotal, o.total)}
+    ${isRequest ? itemsListNoPrice(o.items) : itemsTable(o.items, o.subtotal ?? 0, o.total ?? 0)}
 
     <h2 style="margin:24px 0 4px;font-size:15px;">Customer</h2>
     <div style="font-size:14px;line-height:1.7;">
@@ -204,14 +267,19 @@ export function newOrderAlertEmail(o: OrderEmailPayload): BuiltEmail {
     ${o.paymentReference ? `<div style="margin-top:16px;font-size:13px;color:#6b6b76;">Paystack ref: ${esc(o.paymentReference)}</div>` : ''}
   `
   return {
-    subject: `🔔 New order ${o.trackingId} — ${naira(o.total)}`,
-    html: shell(`New order from ${o.customer.fullName} — ${naira(o.total)}`, body),
+    subject: isRequest
+      ? `🔔 New request ${o.trackingId}, needs a quote`
+      : `🔔 New order ${o.trackingId}, ${naira(o.total ?? 0)}`,
+    html: shell(
+      isRequest ? `New request from ${o.customer.fullName}` : `New order from ${o.customer.fullName}, ${naira(o.total ?? 0)}`,
+      body,
+    ),
     text: [
-      `NEW ORDER ${o.trackingId} — ${naira(o.total)}`,
-      `${o.fulfillment.type} · ${paymentLabel(o.paymentMethod)}`,
+      isRequest ? `NEW REQUEST ${o.trackingId} (needs a quote)` : `NEW ORDER ${o.trackingId}, ${naira(o.total ?? 0)}`,
+      subline.replace(/<[^>]+>/g, ''),
       '',
-      ...o.items.map((it) => `- ${it.name} x${it.qty}  ${naira(it.price * it.qty)}`),
-      `Total: ${naira(o.total)}`,
+      ...o.items.map((it) => (isRequest ? `- ${it.name} x${it.qty}` : `- ${it.name} x${it.qty}  ${naira((it.price ?? 0) * it.qty)}`)),
+      isRequest ? '' : `Total: ${naira(o.total ?? 0)}`,
       '',
       `Customer: ${o.customer.fullName} · ${o.customer.phone} · ${o.customer.email}`,
       o.fulfillment.type === 'delivery'
@@ -239,9 +307,9 @@ export interface OrderStatusEmailPayload {
   customerName: string
   fulfillmentType: 'delivery' | 'pickup'
   total: number
-  /** Optional admin message — required for a cancellation. */
+  /** Optional admin message, required for a cancellation. */
   note?: string
-  /** Rider phone — included on an out-for-delivery notice. */
+  /** Rider phone, included on an out-for-delivery notice. */
   riderNumber?: string
 }
 
@@ -259,7 +327,7 @@ const STATUS_COPY: Record<
   ready: {
     badge: 'Ready',
     badgeColor: NAVY,
-    heading: (n) => `Good news, ${n} — your order is ready!`,
+    heading: (n) => `Good news, ${n}, your order is ready!`,
     body: (p) =>
       p.fulfillmentType === 'pickup'
         ? `Your order is packed and ready for pickup at our kitchen.`
@@ -272,7 +340,7 @@ const STATUS_COPY: Record<
     heading: (n) => `On its way, ${n}! 🛵`,
     body: (p) =>
       p.riderNumber
-        ? `Your order is out for delivery. Your rider&rsquo;s number is <strong>${esc(p.riderNumber)}</strong> — give them a call if you need to. Once it arrives, tap “Confirm delivery” on your tracking page.`
+        ? `Your order is out for delivery. Your rider&rsquo;s number is <strong>${esc(p.riderNumber)}</strong>, give them a call if you need to. Once it arrives, tap “Confirm delivery” on your tracking page.`
         : `Your order is out for delivery. Once it arrives, tap “Confirm delivery” on your tracking page.`,
     subject: (id) => `Your BrightGrillzz order ${id} is out for delivery`,
   },
@@ -282,15 +350,15 @@ const STATUS_COPY: Record<
     heading: (n) => `Enjoy your meal, ${n}! 🎉`,
     body: (p) =>
       p.fulfillmentType === 'pickup'
-        ? `Your order has been marked as picked up. Thanks for choosing BrightGrillzz — we hope every bite is delicious.`
-        : `Your order has been delivered. Thanks for choosing BrightGrillzz — we hope every bite is delicious.`,
+        ? `Your order has been marked as picked up. Thanks for choosing BrightGrillzz, we hope every bite is delicious.`
+        : `Your order has been delivered. Thanks for choosing BrightGrillzz, we hope every bite is delicious.`,
     subject: (id) => `Your BrightGrillzz order ${id} has been delivered`,
   },
   cancelled: {
     badge: 'Cancelled',
     badgeColor: BURGUNDY,
     heading: (n) => `About your order, ${n}`,
-    body: () => `We&rsquo;re sorry — your order has been cancelled. If you were charged, a refund will be arranged. See the note below for details.`,
+    body: () => `We&rsquo;re sorry, your order has been cancelled. If you were charged, a refund will be arranged. See the note below for details.`,
     subject: (id) => `Your BrightGrillzz order ${id} was cancelled`,
   },
   payment_confirmed: {
@@ -341,6 +409,27 @@ export function orderStatusEmail(kind: OrderStatusEventKind, p: OrderStatusEmail
   }
 }
 
+/** A free-text message the admin sends to a customer (order or reservation). */
+export function customMessageEmail(p: { toName: string; subject: string; message: string }): BuiltEmail {
+  const firstName = p.toName.split(/\s+/)[0] || 'there'
+  const paragraphs = p.message
+    .split(/\n{2,}/)
+    .map((para) => `<p style="margin:0 0 14px;font-size:14px;line-height:1.7;color:#15182b;">${esc(para).replace(/\n/g, '<br>')}</p>`)
+    .join('')
+  const body = `
+    <h1 style="margin:0 0 14px;font-size:22px;">Hi ${esc(firstName)},</h1>
+    ${paragraphs}
+    <a href="${esc(CONTACT.whatsapp)}" style="display:inline-block;margin-top:18px;background:${NAVY};color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:999px;">
+      Reply on WhatsApp
+    </a>
+  `
+  return {
+    subject: p.subject,
+    html: shell(p.subject, body),
+    text: [`Hi ${firstName},`, '', p.message, '', `${CONTACT.name} · ${CONTACT.phoneShort}`].join('\n'),
+  }
+}
+
 /** Internal alert for a reservation / contact request. */
 export function reservationAlertEmail(r: ReservationEmailPayload): BuiltEmail {
   const line = (label: string, value?: string) =>
@@ -361,7 +450,7 @@ export function reservationAlertEmail(r: ReservationEmailPayload): BuiltEmail {
     <a href="tel:${esc(r.phone)}" style="display:inline-block;margin-top:22px;background:${NAVY};color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:11px 20px;border-radius:999px;">Call ${esc(r.name.split(/\s+/)[0])}</a>
   `
   return {
-    subject: `📅 Reservation request — ${r.name}${r.date ? ' · ' + r.date : ''}`,
+    subject: `📅 Reservation request, ${r.name}${r.date ? ' · ' + r.date : ''}`,
     html: shell(`Reservation request from ${r.name}`, body),
     text: [
       `RESERVATION REQUEST`,

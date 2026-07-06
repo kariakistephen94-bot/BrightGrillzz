@@ -9,7 +9,7 @@ import { getSiteSettings } from '@/lib/settings.server'
 // across the storefront (contact info, hours, checkout bank details, etc.).
 export const dynamic = 'force-dynamic'
 
-/** Layout for the public marketing/storefront pages — carries the site chrome. */
+/** Layout for the public marketing/storefront pages, carries the site chrome. */
 export default async function SiteLayout({
   children,
 }: Readonly<{

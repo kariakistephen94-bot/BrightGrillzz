@@ -1,12 +1,15 @@
 import { createClient } from '@/lib/supabase/client'
 
-/** Storefront-facing menu item (DB-backed). */
+/**
+ * Storefront-facing menu item (DB-backed). Prices are intentionally NOT included
+ * here: the site runs on a request-a-quote model, so the customer never sees a
+ * price. The reference price stays in the DB for admin quoting only and is never
+ * selected into the public payload.
+ */
 export interface MenuItem {
   id: string
   name: string
   description: string
-  price: number
-  priceLabel: string
   rating: number
   category: string
   image: string | null
@@ -17,8 +20,6 @@ type Row = {
   id: string
   name: string
   description: string | null
-  price: number
-  price_label: string | null
   rating: number | null
   category: string | null
   image: string | null
@@ -30,7 +31,7 @@ export async function fetchPublicMenu(): Promise<MenuItem[]> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from('menu_items')
-    .select('id, name, description, price, price_label, rating, category, image, badge')
+    .select('id, name, description, rating, category, image, badge')
     .eq('is_available', true)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
@@ -40,8 +41,6 @@ export async function fetchPublicMenu(): Promise<MenuItem[]> {
     id: r.id,
     name: r.name,
     description: r.description ?? '',
-    price: r.price,
-    priceLabel: r.price_label ?? '',
     rating: r.rating ?? 0,
     category: r.category ?? 'Grills',
     image: r.image,

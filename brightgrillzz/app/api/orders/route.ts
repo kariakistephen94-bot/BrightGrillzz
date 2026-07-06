@@ -6,13 +6,14 @@ import type { OrderEmailPayload } from '@/lib/email/templates'
 interface IncomingItem {
   name: string
   qty: number
-  price: number
+  /** Undefined for request-a-quote orders (no price set yet). */
+  price?: number
   image?: string | null
 }
 
 // Persists a placed order to Supabase and fires the confirmation emails.
 // Called from checkout after the order is finalized. Insert failures never
-// block the customer — the order is also mirrored to localStorage client-side.
+// block the customer, the order is also mirrored to localStorage client-side.
 export async function POST(request: Request) {
   let body: unknown
   try {
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
   if (isServiceRoleConfigured) {
     saved = await insertOrder(order)
   } else {
-    console.warn('[orders] SUPABASE_SERVICE_ROLE_KEY not set — order not persisted')
+    console.warn('[orders] SUPABASE_SERVICE_ROLE_KEY not set, order not persisted')
   }
 
   // Emails are best-effort and independent of persistence.
@@ -42,9 +43,13 @@ export async function POST(request: Request) {
 async function insertOrder(order: Omit<OrderEmailPayload, 'items'> & { items: IncomingItem[] }): Promise<boolean> {
   const admin = createAdminClient()
 
+  // A request-a-quote order has no amounts or payment yet, it enters at
+  // 'awaiting_quote' with null money. Legacy paid orders keep their amounts.
+  const isRequest = order.awaitingQuote === true
+
   const orderRow = {
     tracking_id: order.trackingId,
-    status: 'pending',
+    status: isRequest ? 'awaiting_quote' : 'pending',
     customer_name: order.customer.fullName,
     customer_phone: order.customer.phone,
     customer_email: order.customer.email || null,
@@ -52,11 +57,11 @@ async function insertOrder(order: Omit<OrderEmailPayload, 'items'> & { items: In
     address: order.fulfillment.address || null,
     area: order.fulfillment.area || null,
     notes: order.fulfillment.notes || null,
-    subtotal: order.subtotal,
-    total: order.total,
-    payment_method: order.paymentMethod ?? 'bank_transfer',
+    subtotal: isRequest ? null : order.subtotal ?? null,
+    total: isRequest ? null : order.total ?? null,
+    payment_method: isRequest ? null : order.paymentMethod ?? 'bank_transfer',
     payment_reference: order.paymentReference || null,
-    payment_confirmed: order.paymentMethod === 'paystack',
+    payment_confirmed: !isRequest && order.paymentMethod === 'paystack',
   }
 
   const { data, error } = await admin
@@ -74,7 +79,7 @@ async function insertOrder(order: Omit<OrderEmailPayload, 'items'> & { items: In
   const itemRows = order.items.map((it) => ({
     order_id: orderId,
     name: it.name,
-    unit_price: it.price,
+    unit_price: it.price ?? null,
     qty: it.qty,
     image: it.image ?? null,
   }))
@@ -95,6 +100,7 @@ function normalizeOrder(body: unknown): (Omit<OrderEmailPayload, 'items'> & { it
   const fulfillment = (b.fulfillment ?? {}) as Record<string, unknown>
   const rawItems = Array.isArray(b.items) ? b.items : []
 
+  const awaitingQuote = b.awaitingQuote === true
   const trackingId = String(b.trackingId ?? '').trim()
   const items: IncomingItem[] = rawItems
     .map((it) => {
@@ -102,7 +108,8 @@ function normalizeOrder(body: unknown): (Omit<OrderEmailPayload, 'items'> & { it
       return {
         name: String(i.name ?? '').trim(),
         qty: Number(i.qty) || 0,
-        price: Number(i.price) || 0,
+        // Requests carry no price, keep it undefined so it stays null in the DB.
+        price: awaitingQuote ? undefined : Number(i.price) || 0,
         image: i.image ? String(i.image) : null,
       }
     })
@@ -125,9 +132,10 @@ function normalizeOrder(body: unknown): (Omit<OrderEmailPayload, 'items'> & { it
       notes: fulfillment.notes ? String(fulfillment.notes) : undefined,
     },
     items,
-    subtotal: Number(b.subtotal) || 0,
-    total: Number(b.total) || 0,
-    paymentMethod: b.paymentMethod === 'paystack' ? 'paystack' : 'bank_transfer',
+    awaitingQuote,
+    subtotal: awaitingQuote ? undefined : Number(b.subtotal) || 0,
+    total: awaitingQuote ? undefined : Number(b.total) || 0,
+    paymentMethod: awaitingQuote ? undefined : b.paymentMethod === 'paystack' ? 'paystack' : 'bank_transfer',
     paymentReference: b.paymentReference ? String(b.paymentReference) : undefined,
   }
 }

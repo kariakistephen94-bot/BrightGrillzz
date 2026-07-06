@@ -1,5 +1,5 @@
 /**
- * Static placeholder data for the admin dashboard. Frontend-only for now —
+ * Static placeholder data for the admin dashboard. Frontend-only for now, 
  * swap these for live queries when the backend lands.
  */
 
@@ -209,9 +209,9 @@ export interface AdminReview {
 
 export const adminReviews: AdminReview[] = [
   { id: 'r1', author: 'T.C.B.O (Tobz)', role: 'Local Guide · 131 reviews', comment: 'Looking for the best barbecued proteins? BrightGrillz is your plug; the taste buds of King Mo Adah, Davido, E-money, Obi-Cubana and more also agree!', rating: 5, date: 'Jul 2, 2026', source: 'Google', published: true },
-  { id: 'r2', author: 'Naf2 Isa', role: 'Local Guide · 91 reviews', comment: 'Nice chicken. Premium quality with perfect seasoning — every bite is worth it.', rating: 5, date: 'Jun 28, 2026', source: 'Google', published: true },
-  { id: 'r3', author: 'yahaya james', role: 'Verified Guest', comment: 'The best place to be — everything is readily available. Excellent service and amazing food!', rating: 5, date: 'Jun 24, 2026', source: 'Google', published: true },
-  { id: 'r4', author: 'Omar Shamsudeen', role: 'Local Guide · 15 reviews', comment: 'Tasty grill with amazing flavours. Worth every naira — highly recommended!', rating: 5, date: 'Jun 19, 2026', source: 'Google', published: true },
+  { id: 'r2', author: 'Naf2 Isa', role: 'Local Guide · 91 reviews', comment: 'Nice chicken. Premium quality with perfect seasoning, every bite is worth it.', rating: 5, date: 'Jun 28, 2026', source: 'Google', published: true },
+  { id: 'r3', author: 'yahaya james', role: 'Verified Guest', comment: 'The best place to be, everything is readily available. Excellent service and amazing food!', rating: 5, date: 'Jun 24, 2026', source: 'Google', published: true },
+  { id: 'r4', author: 'Omar Shamsudeen', role: 'Local Guide · 15 reviews', comment: 'Tasty grill with amazing flavours. Worth every naira, highly recommended!', rating: 5, date: 'Jun 19, 2026', source: 'Google', published: true },
   { id: 'r5', author: 'Okoro Mary', role: 'Local Guide · 3 reviews', comment: 'Nice place to visit with friends and family. Great food, great service!', rating: 4, date: 'Jun 12, 2026', source: 'Google', published: true },
   { id: 'r6', author: 'Joseph Roberts', role: 'Local Guide · 168 reviews', comment: 'Awesome experience from start to finish. Food and service both top notch.', rating: 5, date: 'Jun 5, 2026', source: 'Google', published: true },
   { id: 'r7', author: 'Aisha Bello', role: 'Verified Guest', comment: 'Delivery took a little longer than expected but the food was hot and delicious when it arrived.', rating: 4, date: 'May 30, 2026', source: 'Website', published: false },

@@ -33,7 +33,7 @@ export default async function ProtectedAdminLayout({
 
   if (!user) redirect('/admin/login')
 
-  // Provision the profile on first sign-in — no DB trigger. RLS only permits
+  // Provision the profile on first sign-in, no DB trigger. RLS only permits
   // inserting your own row as 'customer'; promotion to admin/staff is done via
   // SQL (07_promote_admin.sql). Existing rows are left untouched.
   const profileRow = {

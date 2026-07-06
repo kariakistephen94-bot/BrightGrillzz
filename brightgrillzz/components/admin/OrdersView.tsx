@@ -259,7 +259,7 @@ function OrderDrawer({
   const [dispatchOpen, setDispatchOpen] = React.useState(false)
   const [rider, setRider] = React.useState('')
 
-  // Reset the inline forms whenever a different order opens (render-phase sync —
+  // Reset the inline forms whenever a different order opens (render-phase sync, 
   // cheaper and lint-clean vs. an effect).
   const dbId = order?.dbId
   const [prevDbId, setPrevDbId] = React.useState(dbId)
@@ -327,7 +327,7 @@ function OrderDrawer({
 
   const pending = busy !== null
 
-  // A clock that ticks each minute — kept in state so render stays pure and the
+  // A clock that ticks each minute, kept in state so render stays pure and the
   // 24h gate/countdown update on their own while the drawer is open.
   const [now, setNow] = React.useState(() => Date.now())
   React.useEffect(() => {
@@ -442,12 +442,12 @@ function OrderDrawer({
                     <>
                       <div>
                         <dt className="text-[0.7rem] font-medium uppercase tracking-wider text-muted-foreground">Delivery address</dt>
-                        <dd className="mt-0.5 text-sm font-medium text-foreground">{order.address || '—'}</dd>
+                        <dd className="mt-0.5 text-sm font-medium text-foreground">{order.address || 'N/A'}</dd>
                       </div>
                       <div>
                         <dt className="text-[0.7rem] font-medium uppercase tracking-wider text-muted-foreground">Area / landmark</dt>
                         <dd className="mt-0.5 text-sm font-medium text-foreground">
-                          {order.area && order.area !== '—' ? order.area : '—'}
+                          {order.area && order.area !== 'N/A' ? order.area : 'N/A'}
                         </dd>
                       </div>
                     </>
@@ -570,7 +570,7 @@ function OrderDrawer({
                     value={cancelNote}
                     onChange={(e) => setCancelNote(e.target.value)}
                     rows={3}
-                    placeholder="e.g. Sorry, we&rsquo;re out of an item — a refund is on the way."
+                    placeholder="e.g. Sorry, we&rsquo;re out of an item, a refund is on the way."
                     className="w-full resize-none rounded-xl border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/25"
                   />
                   <div className="grid grid-cols-2 gap-2">
@@ -635,7 +635,7 @@ function OrderDrawer({
                 <div className="space-y-2">
                   {completeGated && !canComplete && (
                     <p className="rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
-                      Out for delivery — waiting for the customer to confirm. You can mark it completed in ~{hoursLeft}h if they don&rsquo;t.
+                      Out for delivery, waiting for the customer to confirm. You can mark it completed in ~{hoursLeft}h if they don&rsquo;t.
                     </p>
                   )}
                   <div className="grid grid-cols-2 gap-2">

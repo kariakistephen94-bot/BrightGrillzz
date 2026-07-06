@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Minus, Plus, Star, Utensils, X } from 'lucide-react'
 import { useCart } from '@/context/cart-context'
 import { cn } from '@/lib/utils'
-import { formatNaira } from '@/lib/format'
 import type { MenuItem } from '@/lib/menu'
 
 export function MenuItemCard({ item }: { item: MenuItem }) {
@@ -23,8 +22,7 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
     if (node) setIsClamped(node.scrollHeight - node.clientHeight > 1)
   }, [])
 
-  const add = () =>
-    addItem({ id: item.id, name: item.name, price: item.price, image: item.image ?? '' })
+  const add = () => addItem({ id: item.id, name: item.name, image: item.image ?? '' })
 
   return (
     <div className="group relative flex h-full flex-col overflow-hidden rounded-[1.6rem] border border-black/[0.06] bg-card shadow-[0_10px_34px_-16px_rgba(0,26,77,0.28)] transition-all duration-500 ease-out hover:-translate-y-1.5 hover:shadow-[0_28px_54px_-22px_rgba(0,26,77,0.4)]">
@@ -75,7 +73,7 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
               exit={{ opacity: 0, y: 6 }}
               className="absolute bottom-3 left-3 rounded-full bg-primary/90 px-2.5 py-1 text-[10px] font-bold text-white shadow-lg backdrop-blur"
             >
-              {qty} in cart
+              {qty} in request
             </motion.span>
           )}
         </AnimatePresence>
@@ -112,13 +110,8 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
           </div>
         )}
 
-        {/* Price (own line — always visible) */}
-        <span className="mt-2 block text-base font-bold text-primary md:mt-2.5 md:text-xl">
-          {formatNaira(item.price)}
-        </span>
-
         {/* Full-width Add / stepper */}
-        <div className="relative mt-2 h-10 md:h-11">
+        <div className="relative mt-3 h-10 md:h-11">
           <AnimatePresence mode="popLayout" initial={false}>
             {qty === 0 ? (
               <motion.button
@@ -130,11 +123,11 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
                 exit={{ opacity: 0, scale: 0.85 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 28 }}
                 whileTap={{ scale: 0.96 }}
-                aria-label={`Add ${item.name} to cart`}
+                aria-label={`Add ${item.name} to request`}
                 className="absolute inset-0 flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-to-br from-primary to-[#00296b] text-sm font-semibold text-white shadow-lg shadow-primary/25"
               >
                 <Plus className="h-4 w-4" strokeWidth={2.75} />
-                Add to cart
+                Add to request
               </motion.button>
             ) : (
               <motion.div

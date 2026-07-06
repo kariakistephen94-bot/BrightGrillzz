@@ -7,7 +7,7 @@ import { useListNav } from './useListNav'
 
 /**
  * Search box bound to a URL param (default `q`). Seeded from the server-provided
- * value and debounced, so typing updates the query — and the server page — a
+ * value and debounced, so typing updates the query, and the server page, a
  * beat after the user stops.
  */
 export function SearchInput({
@@ -23,7 +23,7 @@ export function SearchInput({
 }) {
   const { setParams } = useListNav()
   const [value, setValue] = React.useState(initial)
-  // What's currently reflected in the URL — avoids re-pushing an unchanged query.
+  // What's currently reflected in the URL, avoids re-pushing an unchanged query.
   const committed = React.useRef(initial)
 
   React.useEffect(() => {

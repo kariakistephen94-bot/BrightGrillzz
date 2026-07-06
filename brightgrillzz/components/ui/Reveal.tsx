@@ -38,7 +38,7 @@ export function Reveal({
   )
 }
 
-/** Stagger container — children wrapped in <RevealItem/> animate in sequence. */
+/** Stagger container, children wrapped in <RevealItem/> animate in sequence. */
 export function RevealGroup({
   children,
   className,

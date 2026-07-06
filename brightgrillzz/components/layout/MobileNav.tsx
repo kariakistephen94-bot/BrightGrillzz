@@ -13,7 +13,7 @@ const tabs = [
   { name: 'Track', href: '/track', icon: MapPin },
 ]
 
-/** Mobile bottom dock — floating frosted glass with a lifting active pill. */
+/** Mobile bottom dock, floating frosted glass with a lifting active pill. */
 export default function MobileNav() {
   const pathname = usePathname()
   const { itemCount } = useCart()

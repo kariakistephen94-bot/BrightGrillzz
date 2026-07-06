@@ -39,7 +39,7 @@ export default function GalleryPage() {
         </div>
       </section>
 
-      {/* Grid — view only */}
+      {/* Grid, view only */}
       <section className="py-12 md:py-20 px-4">
         <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 md:gap-6">
           {GALLERY_ITEMS.map((item, i) => (
@@ -67,7 +67,7 @@ export default function GalleryPage() {
         </div>
       </section>
 
-      {/* Lightbox — view only */}
+      {/* Lightbox, view only */}
       <AnimatePresence>
         {selected && (
           <motion.div

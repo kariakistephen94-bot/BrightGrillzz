@@ -12,7 +12,7 @@ import { NAV_LINKS } from '@/lib/contact'
 
 const LINKS = [...NAV_LINKS, { href: '/track', label: 'Track Order' }]
 
-/** Desktop floating glass-pill navigation — scroll-aware, brand-forward. */
+/** Desktop floating glass-pill navigation, scroll-aware, brand-forward. */
 export default function Navbar() {
   const pathname = usePathname()
   const { itemCount } = useCart()

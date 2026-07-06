@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Instagram, Facebook, MapPin, Mail, Phone, MessageCircle } from 'lucide-react'
+import { Instagram, Facebook, MapPin, Mail, Phone, MessageCircle, Youtube } from 'lucide-react'
 import { CONTACT } from '@/lib/contact'
+import { TikTokIcon } from '@/components/icons/TikTokIcon'
 import type { SiteSettings } from '@/lib/settings'
 
 export default function Footer({ settings }: { settings: SiteSettings }) {
@@ -96,6 +97,24 @@ export default function Footer({ settings }: { settings: SiteSettings }) {
                 className="bg-white/10 p-3 rounded-full hover:bg-secondary hover:text-white transition-all hover:scale-110"
               >
                 <MessageCircle className="w-5 h-5" />
+              </a>
+              <a
+                href={CONTACT.tiktok}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="TikTok"
+                className="bg-white/10 p-3 rounded-full hover:bg-secondary hover:text-white transition-all hover:scale-110"
+              >
+                <TikTokIcon className="w-5 h-5" />
+              </a>
+              <a
+                href={CONTACT.youtube}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="YouTube"
+                className="bg-white/10 p-3 rounded-full hover:bg-secondary hover:text-white transition-all hover:scale-110"
+              >
+                <Youtube className="w-5 h-5" />
               </a>
             </div>
           </div>

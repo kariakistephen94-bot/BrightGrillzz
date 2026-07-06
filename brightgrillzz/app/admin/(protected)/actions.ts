@@ -6,7 +6,7 @@ import { sendOrderStatusEmail } from '@/lib/email/send'
 import type { OrderStatusEventKind } from '@/lib/email/templates'
 import type { OrderStatus } from '@/lib/supabase/queries'
 
-// All mutations run under the signed-in admin's session — RLS (is_staff)
+// All mutations run under the signed-in admin's session, RLS (is_staff)
 // enforces that only staff/admins can write.
 
 type OrderStateRow = {
@@ -43,7 +43,7 @@ export async function updateOrderStatus(
   const { note, riderNumber } = opts
   const supabase = await createClient()
 
-  // Current state — needed for the 24h completion gate and the email payload.
+  // Current state, needed for the 24h completion gate and the email payload.
   const { data } = await supabase
     .from('orders')
     .select('status, out_for_delivery_at, tracking_id, customer_name, customer_email, fulfillment_type, total')
@@ -57,7 +57,7 @@ export async function updateOrderStatus(
   }
 
   // An out-for-delivery order can only be MANUALLY completed 24h after dispatch
-  // — before that, completion comes from the customer's confirm (or auto-sweep).
+  //, before that, completion comes from the customer's confirm (or auto-sweep).
   if (
     status === 'completed' &&
     cur?.status === 'out_for_delivery' &&
