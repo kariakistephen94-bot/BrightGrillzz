@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, type Variants } from 'framer-motion'
@@ -27,9 +28,32 @@ const heroItem: Variants = {
 
 function StorefrontReviews() {
   const [page, setPage] = useState(1)
+  const [dbReviews, setDbReviews] = useState<any[]>([])
+
+  useEffect(() => {
+    async function loadReviews() {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('is_published', true)
+      
+      if (data) {
+        setDbReviews(data)
+      }
+    }
+    loadReviews()
+  }, [])
+
+  const combinedReviews = useMemo(() => {
+    const all = [...REVIEWS, ...dbReviews]
+    return all.sort((a, b) => b.rating - a.rating)
+  }, [dbReviews])
+
   const pageSize = 3
-  const totalPages = Math.ceil(REVIEWS.length / pageSize)
-  const currentReviews = REVIEWS.slice((page - 1) * pageSize, page * pageSize)
+  const totalPages = Math.ceil(combinedReviews.length / pageSize)
+  const validPage = Math.min(page, totalPages || 1)
+  const currentReviews = combinedReviews.slice((validPage - 1) * pageSize, validPage * pageSize)
 
   return (
     <section className="overflow-hidden px-4 py-20 md:py-28">
@@ -62,9 +86,6 @@ function StorefrontReviews() {
                 </p>
                 
                 <div className="flex items-center gap-4 border-t border-border/50 pt-5 mt-auto">
-                  <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-primary/60 font-bold text-primary-foreground shadow-inner">
-                    {review.author.charAt(0)}
-                  </div>
                   <div>
                     <p className="text-sm font-bold text-foreground">{review.author}</p>
                     <p className="text-xs font-medium text-muted-foreground">{review.role}</p>
