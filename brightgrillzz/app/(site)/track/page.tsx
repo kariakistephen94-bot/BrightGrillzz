@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { CheckCircle2, Flame, Package, Truck, Search, Download, Loader2, XCircle } from 'lucide-react'
+import { CheckCircle2, Flame, Package, Truck, Search, Download, Loader2, XCircle, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Progress } from '@/components/ui/Progress'
@@ -16,8 +16,14 @@ import { formatNaira } from '@/lib/format'
 import { getWhatsAppOrderUrl } from '@/lib/whatsapp'
 import { WHATSAPP_NUMBER } from '@/lib/payment'
 import { downloadOrderReceipt } from '@/lib/receipt-pdf'
+import { useSiteSettings } from '@/context/settings-context'
 
 // Live status pulled from the database (kept in sync with the admin dashboard).
+interface LiveItem {
+  name: string
+  qty: number
+  unitPrice: number
+}
 interface LiveOrder {
   trackingId: string
   status: OrderStatus
@@ -27,12 +33,22 @@ interface LiveOrder {
   paymentConfirmed: boolean
   cancellationNote: string | null
   riderNumber: string | null
+  items: LiveItem[]
+  payUrl: string | null
+  customerPaidNotice: boolean
 }
 
 function parseLive(raw: unknown): LiveOrder | null {
   if (!raw || typeof raw !== 'object') return null
   const o = raw as Record<string, unknown>
   if (!o.tracking_id) return null
+  const items: LiveItem[] = Array.isArray(o.items)
+    ? (o.items as Record<string, unknown>[]).map((it) => ({
+        name: String(it.name ?? ''),
+        qty: Number(it.qty) || 0,
+        unitPrice: Number(it.unit_price) || 0,
+      }))
+    : []
   return {
     trackingId: String(o.tracking_id),
     status: (o.status as OrderStatus) ?? 'pending',
@@ -42,6 +58,9 @@ function parseLive(raw: unknown): LiveOrder | null {
     paymentConfirmed: Boolean(o.payment_confirmed),
     cancellationNote: o.cancellation_note ? String(o.cancellation_note) : null,
     riderNumber: o.rider_number ? String(o.rider_number) : null,
+    items,
+    payUrl: o.pay_url ? String(o.pay_url) : null,
+    customerPaidNotice: Boolean(o.customer_paid_notice),
   }
 }
 
@@ -78,7 +97,11 @@ function TrackContent() {
   const [loading, setLoading] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [confirming, setConfirming] = useState(false)
+  const [reporting, setReporting] = useState(false)
+  const [payingOnline, setPayingOnline] = useState(false)
+  const [payError, setPayError] = useState<string | null>(null)
   const activeId = useRef<string>('')
+  const settings = useSiteSettings()
 
   const handleDownload = async () => {
     if (!localOrder) return
@@ -116,6 +139,47 @@ function TrackContent() {
       }
     } finally {
       setConfirming(false)
+    }
+  }
+
+  // Customer chooses to pay the quote online → fetch a Paystack link and go.
+  const payOnline = async (id: string) => {
+    setPayingOnline(true)
+    setPayError(null)
+    try {
+      const res = await fetch('/api/orders/pay-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      const json = (await res.json()) as { ok?: boolean; url?: string; error?: string }
+      if (json.ok && json.url) {
+        window.location.href = json.url
+        return
+      }
+      setPayError(json.error || 'Online payment is unavailable right now. Please use bank transfer.')
+    } catch {
+      setPayError('Could not start online payment. Please use bank transfer.')
+    } finally {
+      setPayingOnline(false)
+    }
+  }
+
+  // Customer reports a bank transfer for a quoted order → flags it for admin.
+  const reportBankPayment = async (id: string) => {
+    setReporting(true)
+    try {
+      const res = await fetch('/api/orders/paid-notice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      if (res.ok) {
+        const updated = await fetchLive(id)
+        if (updated && activeId.current === id) setLive(updated)
+      }
+    } finally {
+      setReporting(false)
     }
   }
 
@@ -230,7 +294,7 @@ function TrackContent() {
 
               <div className="flex flex-wrap items-center gap-2 mb-6 text-sm text-muted-foreground">
                 <span>{fulfillment === 'delivery' ? 'Delivery' : 'Pickup'} · {total > 0 ? formatNaira(total) : 'Quote pending'}</span>
-                {paymentMethod === 'bank_transfer' && (
+                {paymentMethod === 'bank_transfer' && status !== 'awaiting_quote' && status !== 'quoted' && (
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                       paymentConfirmed ? 'bg-green-500/10 text-green-600' : 'bg-amber-500/10 text-amber-600'
@@ -240,6 +304,87 @@ function TrackContent() {
                   </span>
                 )}
               </div>
+
+              {status === 'awaiting_quote' && (
+                <div className="mb-8 rounded-2xl border border-primary/20 bg-primary/5 p-5 text-sm">
+                  <p className="mb-1 font-bold text-foreground">Preparing your quote</p>
+                  <p className="text-muted-foreground">
+                    We have your request and will send your price shortly, by WhatsApp and email. Check back here soon.
+                  </p>
+                </div>
+              )}
+
+              {status === 'quoted' && !paymentConfirmed && (
+                <div className="mb-8 rounded-2xl border border-primary/20 bg-primary/5 p-5">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Tag className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-bold">Your quote is ready</h3>
+                  </div>
+
+                  {live?.items && live.items.length > 0 && (
+                    <div className="mb-3 space-y-1.5">
+                      {live.items.map((it, i) => (
+                        <div key={i} className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">{it.name} × {it.qty}</span>
+                          <span className="font-medium">{formatNaira(it.unitPrice * it.qty)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mb-4 flex items-center justify-between border-t border-border pt-3">
+                    <span className="font-bold">Total</span>
+                    <span className="font-headline text-xl font-bold text-primary">{formatNaira(total)}</span>
+                  </div>
+
+                  {live?.customerPaidNotice ? (
+                    <div className="rounded-xl bg-amber-500/10 p-3 text-center text-sm font-medium text-amber-700">
+                      Payment reported. We&apos;ll confirm it shortly and start grilling.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Button
+                        onClick={() => payOnline(trackingId)}
+                        disabled={payingOnline}
+                        className="h-12 w-full rounded-full font-bold"
+                      >
+                        {payingOnline ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Pay {formatNaira(total)} online
+                      </Button>
+                      {payError && <p className="text-center text-xs text-destructive">{payError}</p>}
+                      <div className="text-center text-xs text-muted-foreground">or</div>
+                      <div className="rounded-xl border border-border bg-card p-4">
+                        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                          Or pay by bank transfer
+                        </p>
+                        <div className="space-y-2 text-sm">
+                          {[
+                            { label: 'Account number', value: settings.accountNumber },
+                            { label: 'Bank', value: settings.bank },
+                            { label: 'Account name', value: settings.accountName },
+                          ].map((row) => (
+                            <div key={row.label} className="flex items-center justify-between gap-2">
+                              <span className="text-muted-foreground">{row.label}</span>
+                              <span className="inline-flex items-center gap-1 font-semibold">
+                                {row.value}
+                                <CopyButton value={row.value} label={row.label} className="h-6 w-6" />
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <Button
+                          onClick={() => reportBankPayment(trackingId)}
+                          disabled={reporting}
+                          variant="outline"
+                          className="mt-3 h-11 w-full rounded-full font-bold"
+                        >
+                          {reporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+                          I&apos;ve made the payment
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {isCancelled ? (
                 <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-6 text-center">

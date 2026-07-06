@@ -10,11 +10,13 @@ import {
   newOrderAlertEmail,
   orderConfirmationEmail,
   orderStatusEmail,
+  quoteEmail,
   reservationAlertEmail,
   type BuiltEmail,
   type OrderEmailPayload,
   type OrderStatusEmailPayload,
   type OrderStatusEventKind,
+  type QuoteEmailPayload,
   type ReservationEmailPayload,
 } from './templates'
 
@@ -86,6 +88,18 @@ export async function sendOrderStatusEmail(
   if (!result.sent && result.error) {
     console.error(`[email] status email (${kind}) failed:`, result.error)
   }
+  return result
+}
+
+/** Sends a priced quote to a customer. */
+export async function sendQuoteEmail(to: string, payload: QuoteEmailPayload): Promise<SendResult> {
+  if (!isEmailConfigured) {
+    console.warn('[email] RESEND_API_KEY not set, skipping quote email')
+    return { sent: false, skipped: true }
+  }
+  if (!to) return { sent: false, skipped: true }
+  const result = await deliver(to, quoteEmail(payload), NOTIFICATION_EMAIL)
+  if (!result.sent && result.error) console.error('[email] quote email failed:', result.error)
   return result
 }
 

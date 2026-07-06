@@ -4,12 +4,16 @@ import { sendOrderEmails } from '@/lib/email/send'
 import type { OrderEmailPayload } from '@/lib/email/templates'
 
 interface IncomingItem {
+  /** Menu item uuid, so a quoted item can be priced from its reference/daily price. */
+  id?: string | null
   name: string
   qty: number
   /** Undefined for request-a-quote orders (no price set yet). */
   price?: number
   image?: string | null
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // Persists a placed order to Supabase and fires the confirmation emails.
 // Called from checkout after the order is finalized. Insert failures never
@@ -78,6 +82,7 @@ async function insertOrder(order: Omit<OrderEmailPayload, 'items'> & { items: In
   const orderId = (data as { id: string }).id
   const itemRows = order.items.map((it) => ({
     order_id: orderId,
+    menu_item_id: it.id && UUID_RE.test(it.id) ? it.id : null,
     name: it.name,
     unit_price: it.price ?? null,
     qty: it.qty,
@@ -106,6 +111,7 @@ function normalizeOrder(body: unknown): (Omit<OrderEmailPayload, 'items'> & { it
     .map((it) => {
       const i = (it ?? {}) as Record<string, unknown>
       return {
+        id: i.id ? String(i.id) : null,
         name: String(i.name ?? '').trim(),
         qty: Number(i.qty) || 0,
         // Requests carry no price, keep it undefined so it stays null in the DB.

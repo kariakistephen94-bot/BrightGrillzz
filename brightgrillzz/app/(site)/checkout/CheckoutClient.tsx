@@ -75,7 +75,7 @@ export default function CheckoutClient() {
         createdAt: order.createdAt,
         customer: order.customer,
         fulfillment: order.fulfillment,
-        items: order.items.map((i) => ({ name: i.name, qty: i.qty, image: i.image })),
+        items: order.items.map((i) => ({ id: i.id, name: i.name, qty: i.qty, image: i.image })),
         awaitingQuote: true,
       }),
     }).catch(() => {})

@@ -409,6 +409,83 @@ export function orderStatusEmail(kind: OrderStatusEventKind, p: OrderStatusEmail
   }
 }
 
+export interface QuoteEmailPayload {
+  trackingId: string
+  customerName: string
+  items: { name: string; qty: number; unitPrice: number }[]
+  total: number
+  note?: string
+  bank?: { bank: string; accountNumber: string; accountName: string }
+  payLink?: string
+}
+
+/** The priced quote the admin sends to a customer for a request. */
+export function quoteEmail(p: QuoteEmailPayload): BuiltEmail {
+  const firstName = p.customerName.split(/\s+/)[0] || 'there'
+  const rows = p.items
+    .map(
+      (it) => `<tr>
+        <td style="padding:10px 0;border-bottom:1px solid #eee;font-size:14px;">${esc(it.name)} <span style="color:#6b6b76;">× ${it.qty}</span></td>
+        <td style="padding:10px 0;border-bottom:1px solid #eee;font-size:14px;text-align:right;white-space:nowrap;">${naira(it.unitPrice * it.qty)}</td>
+      </tr>`,
+    )
+    .join('')
+
+  const payBlocks: string[] = []
+  if (p.payLink) {
+    payBlocks.push(
+      `<a href="${esc(p.payLink)}" style="display:inline-block;margin:6px 0;background:${NAVY};color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:999px;">Pay ${naira(p.total)} online</a>`,
+    )
+  }
+  if (p.bank) {
+    payBlocks.push(
+      `<div style="margin-top:10px;font-size:13px;color:#15182b;line-height:1.7;">
+        <div style="font-size:12px;color:#6b6b76;text-transform:uppercase;letter-spacing:.5px;">Or pay by bank transfer</div>
+        ${esc(p.bank.bank)} · <strong>${esc(p.bank.accountNumber)}</strong><br>${esc(p.bank.accountName)}
+      </div>`,
+    )
+  }
+
+  const noteBlock = p.note
+    ? `<p style="margin:0 0 16px;color:#6b6b76;font-size:14px;line-height:1.7;">${esc(p.note).replace(/\n/g, '<br>')}</p>`
+    : ''
+
+  const body = `
+    <h1 style="margin:0 0 6px;font-size:22px;">Your quote is ready, ${esc(firstName)}! 🔥</h1>
+    <p style="margin:0 0 16px;color:#6b6b76;font-size:14px;line-height:1.6;">Here is the price for your request. Reply or message us on WhatsApp to confirm and we will get grilling.</p>
+    ${noteBlock}
+    <div style="background:#faf8f5;border:1px solid #e6e2da;border-radius:14px;padding:14px 16px;margin-bottom:16px;">
+      <div style="font-size:12px;color:#6b6b76;text-transform:uppercase;letter-spacing:.5px;">Tracking ID</div>
+      <div style="font-size:20px;font-weight:700;color:${NAVY};letter-spacing:.5px;">${esc(p.trackingId)}</div>
+    </div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 4px;">
+      ${rows}
+      <tr>
+        <td style="padding:12px 0 0;font-size:16px;font-weight:700;">Total</td>
+        <td style="padding:12px 0 0;font-size:16px;font-weight:700;text-align:right;color:${NAVY};">${naira(p.total)}</td>
+      </tr>
+    </table>
+    <h2 style="margin:24px 0 8px;font-size:15px;">How to pay</h2>
+    ${payBlocks.join('')}
+  `
+  return {
+    subject: `Your BrightGrillzz quote ${p.trackingId}, ${naira(p.total)}`,
+    html: shell(`Your quote ${p.trackingId}, ${naira(p.total)}`, body),
+    text: [
+      `Your BrightGrillzz quote is ready, ${firstName}.`,
+      `Tracking ID: ${p.trackingId}`,
+      p.note ? `\n${p.note}\n` : '',
+      ...p.items.map((it) => `- ${it.name} x${it.qty}  ${naira(it.unitPrice * it.qty)}`),
+      `Total: ${naira(p.total)}`,
+      '',
+      p.payLink ? `Pay online: ${p.payLink}` : '',
+      p.bank ? `Bank transfer: ${p.bank.bank} ${p.bank.accountNumber} (${p.bank.accountName})` : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+  }
+}
+
 /** A free-text message the admin sends to a customer (order or reservation). */
 export function customMessageEmail(p: { toName: string; subject: string; message: string }): BuiltEmail {
   const firstName = p.toName.split(/\s+/)[0] || 'there'

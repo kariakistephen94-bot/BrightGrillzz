@@ -8,6 +8,7 @@ import {
   Mail,
   MapPin,
   Phone,
+  Tag,
   Trash2,
   Truck,
   X,
@@ -21,9 +22,13 @@ import { Pagination } from './Pagination'
 import { CopyButton } from '@/components/ui/CopyButton'
 import { SearchInput } from './SearchInput'
 import { useListNav } from './useListNav'
+import { QuoteDialog } from './QuoteDialog'
+import { confirmQuotePaid } from '@/app/admin/(protected)/quote-actions'
 
 const TABS: { key: OrderStatus | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
+  { key: 'awaiting_quote', label: 'To quote' },
+  { key: 'quoted', label: 'Quoted' },
   { key: 'pending', label: 'Pending' },
   { key: 'preparing', label: 'Preparing' },
   { key: 'ready', label: 'Ready' },
@@ -222,6 +227,9 @@ function nextStatus(order: AdminOrderRow): OrderStatus | undefined {
       return order.fulfillment === 'delivery' ? 'out_for_delivery' : 'completed'
     case 'out_for_delivery':
       return 'completed'
+    case 'quoted':
+      // Once the customer has paid the quote, start the kitchen.
+      return 'preparing'
     default:
       return undefined
   }
@@ -258,8 +266,9 @@ function OrderDrawer({
   const [cancelNote, setCancelNote] = React.useState('')
   const [dispatchOpen, setDispatchOpen] = React.useState(false)
   const [rider, setRider] = React.useState('')
+  const [quoteOpen, setQuoteOpen] = React.useState(false)
 
-  // Reset the inline forms whenever a different order opens (render-phase sync, 
+  // Reset the inline forms whenever a different order opens (render-phase sync,
   // cheaper and lint-clean vs. an effect).
   const dbId = order?.dbId
   const [prevDbId, setPrevDbId] = React.useState(dbId)
@@ -270,6 +279,7 @@ function OrderDrawer({
     setDispatchOpen(false)
     setRider('')
     setBusy(null)
+    setQuoteOpen(false)
   }
 
   const advance = order ? nextStatus(order) : undefined
@@ -312,6 +322,20 @@ function OrderDrawer({
     setBusy('payment')
     onPatch(order.dbId, { paymentConfirmed: confirmed })
     await setPaymentConfirmed(order.dbId, confirmed)
+    setBusy(null)
+  }
+
+  // Quoted order paid by bank transfer: confirm + start the kitchen in one step.
+  const runQuotePaid = async () => {
+    if (!order) return
+    const prev = order
+    setBusy('payment')
+    onPatch(order.dbId, { status: 'preparing', paymentConfirmed: true })
+    const res = await confirmQuotePaid(order.dbId)
+    if (res && !res.ok) {
+      onPatch(prev.dbId, { status: prev.status, paymentConfirmed: prev.paymentConfirmed })
+      alert(res.error)
+    }
     setBusy(null)
   }
 
@@ -378,6 +402,35 @@ function OrderDrawer({
                 <StatusBadge status={order.status} />
                 <span className="text-sm text-muted-foreground">{order.placed}</span>
               </div>
+
+              {(order.status === 'awaiting_quote' || order.status === 'quoted') && (
+                <button
+                  onClick={() => setQuoteOpen(true)}
+                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-secondary to-[#9e1730] text-sm font-semibold text-white"
+                >
+                  <Tag className="h-4 w-4" />
+                  {order.status === 'awaiting_quote' ? 'Quote this request' : 'Edit or resend quote'}
+                </button>
+              )}
+
+              {order.status === 'quoted' && (
+                <div className="rounded-2xl border border-chart-3/30 bg-chart-3/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-chart-3">Payment</p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {order.customerPaidNotice
+                      ? 'The customer reported a bank transfer. Confirm once it lands in your account.'
+                      : 'Waiting on payment. Online (Paystack) payments confirm automatically; confirm a bank transfer here once it lands.'}
+                  </p>
+                  <button
+                    disabled={pending}
+                    onClick={() => runQuotePaid()}
+                    className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-success text-sm font-semibold text-white transition-colors hover:bg-success/90 disabled:opacity-60"
+                  >
+                    {busy === 'payment' ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgeCheck className="h-4 w-4" />}
+                    Confirm bank payment &amp; start
+                  </button>
+                </div>
+              )}
 
               {order.status === 'cancelled' && order.cancellationNote && (
                 <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
@@ -529,7 +582,7 @@ function OrderDrawer({
               </div>
 
               {/* Bank-transfer payment confirmation */}
-              {order.payment === 'bank_transfer' && (
+              {order.payment === 'bank_transfer' && order.status !== 'quoted' && order.status !== 'awaiting_quote' && (
                 <div className="rounded-2xl border border-border bg-background p-4">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Bank transfer</p>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -653,10 +706,18 @@ function OrderDrawer({
                       </button>
                     ) : (
                       <button disabled className="h-10 rounded-full border border-border bg-card text-sm font-semibold text-muted-foreground">
-                        {order.status === 'completed' ? 'Completed' : 'Cancelled'}
+                        {order.status === 'completed'
+                          ? 'Completed'
+                          : order.status === 'awaiting_quote'
+                            ? 'Quote to proceed'
+                            : 'Cancelled'}
                       </button>
                     )}
-                    {order.status === 'pending' || order.status === 'preparing' || order.status === 'ready' ? (
+                    {order.status === 'pending' ||
+                    order.status === 'preparing' ||
+                    order.status === 'ready' ||
+                    order.status === 'awaiting_quote' ||
+                    order.status === 'quoted' ? (
                       <button
                         disabled={pending}
                         onClick={() => setCancelOpen(true)}
@@ -686,6 +747,8 @@ function OrderDrawer({
           </div>
         )}
       </aside>
+
+      {quoteOpen && dbId && <QuoteDialog dbId={dbId} onClose={() => setQuoteOpen(false)} />}
     </>
   )
 }

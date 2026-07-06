@@ -42,6 +42,7 @@ export interface AdminOrderRow {
   cancellationNote: string | null
   riderNumber: string | null
   outForDeliveryAt: string | null
+  customerPaidNotice: boolean
   placed: string
   createdAt: string
 }
@@ -132,7 +133,7 @@ function sanitizeSearch(q: string | undefined): string {
 /* ------------------------------- orders -------------------------------- */
 
 const ORDER_SELECT =
-  'id, tracking_id, status, customer_name, customer_email, customer_phone, fulfillment_type, address, area, notes, subtotal, total, payment_method, payment_confirmed, payment_reference, cancellation_note, rider_number, out_for_delivery_at, created_at, order_items(name, qty, unit_price, line_total)'
+  'id, tracking_id, status, customer_name, customer_email, customer_phone, fulfillment_type, address, area, notes, subtotal, total, payment_method, payment_confirmed, payment_reference, cancellation_note, rider_number, out_for_delivery_at, customer_paid_notice, created_at, order_items(name, qty, unit_price, line_total)'
 
 type RawOrder = {
   id: string
@@ -153,6 +154,7 @@ type RawOrder = {
   cancellation_note: string | null
   rider_number: string | null
   out_for_delivery_at: string | null
+  customer_paid_notice: boolean | null
   created_at: string
   order_items: { name: string; qty: number; unit_price: number; line_total: number }[] | null
 }
@@ -194,6 +196,7 @@ function mapOrder(o: RawOrder): AdminOrderRow {
     cancellationNote: o.cancellation_note,
     riderNumber: o.rider_number,
     outForDeliveryAt: o.out_for_delivery_at,
+    customerPaidNotice: Boolean(o.customer_paid_notice),
     placed: fmtDateTime(o.created_at),
     createdAt: o.created_at,
   }
