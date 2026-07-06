@@ -91,7 +91,7 @@ export default function ContactPage() {
                   <CardTitle>Call Us</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <p className="text-muted-foreground">Available 24/7</p>
+                  <p className="text-muted-foreground">Available 9am to 6pm, Mon to Sun</p>
                   <a href={`tel:${settings.phone}`} className="text-lg font-bold text-primary hover:text-primary/80">
                     {settings.phone}
                   </a>

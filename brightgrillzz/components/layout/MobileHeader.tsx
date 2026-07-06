@@ -54,7 +54,7 @@ export default function MobileHeader() {
         </Link>
 
         <span className="rounded-full bg-secondary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-secondary">
-          Open 24/7
+          9am to 6pm
         </span>
       </div>
     </header>

@@ -13,7 +13,7 @@ export const CONTACT = {
   youtube: 'https://www.youtube.com/@brightgrillzzglobal/videos',
   tiktok: 'https://www.tiktok.com/@brightgrillzz',
   maps: 'https://maps.app.goo.gl/j2EAceh2XF4a6ud78',
-  hours: 'Open 24/7',
+  hours: 'Mon to Sun, 9am to 6pm',
   rating: '4.4',
   reviewCount: '20+',
   coordinates: {
@@ -213,7 +213,7 @@ export const MENU_CATEGORIES = [
 export const STATS = [
   { value: '4.4★', label: 'Google Rating' },
   { value: '20+', label: 'Customer Reviews' },
-  { value: '24/7', label: 'Always Open' },
+  { value: '9-6', label: 'Open Daily' },
   { value: 'A-List', label: 'Clientele' },
 ]
 
@@ -269,7 +269,7 @@ export const SERVICE_FEATURES = [
   { id: 1, icon: 'Utensils', title: 'Dine In', description: 'Comfortable seating for every occasion' },
   { id: 2, icon: 'TrendingUp', title: 'Drive Through', description: 'Quick, convenient grab-and-go service' },
   { id: 3, icon: 'Truck', title: 'Delivery', description: 'Fast, no-contact delivery available' },
-  { id: 4, icon: 'Clock', title: 'Open 24/7', description: 'Always ready to serve you' },
+  { id: 4, icon: 'Clock', title: 'Open Daily', description: 'Serving 9am to 6pm, Mon to Sun' },
 ]
 
 // Navigation Links

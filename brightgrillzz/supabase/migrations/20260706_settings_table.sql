@@ -32,7 +32,7 @@ insert into settings (
   '0818 107 0919',
   'Brightgrillzzglobal@gmail.com',
   '5 Madiana Close, Wuse 2, Abuja, Nigeria',
-  'Open 24/7',
+  'Mon to Sun, 9am to 6pm',
   'UBA',
   '1028930153',
   'Brightgrillzz Global Ltd',

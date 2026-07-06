@@ -85,7 +85,7 @@ function shell(preheader: string, bodyHtml: string): string {
             <a href="tel:${esc(CONTACT.phone)}" style="color:${NAVY};text-decoration:none;">${esc(CONTACT.phoneShort)}</a>
             &nbsp;·&nbsp;
             <a href="${esc(CONTACT.whatsapp)}" style="color:${NAVY};text-decoration:none;">WhatsApp</a>
-            &nbsp;·&nbsp; Open 24/7
+            &nbsp;·&nbsp; ${esc(CONTACT.hours)}
           </td>
         </tr>
       </table>

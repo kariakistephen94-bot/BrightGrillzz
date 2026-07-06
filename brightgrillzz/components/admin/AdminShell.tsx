@@ -225,7 +225,7 @@ function Sidebar({
       <div className="p-3">
         <div className="rounded-2xl border border-sidebar-border bg-sidebar-accent/60 p-4">
           <p className="text-sm font-semibold text-sidebar-foreground">Bright Grillzz</p>
-          <p className="mt-0.5 text-xs text-sidebar-muted">Wuse 2, Abuja · Open 24/7</p>
+          <p className="mt-0.5 text-xs text-sidebar-muted">Wuse 2, Abuja · 9am to 6pm</p>
           <Link
             href="/"
             className="mt-3 inline-flex text-xs font-semibold text-primary hover:underline"
