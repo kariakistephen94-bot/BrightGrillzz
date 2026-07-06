@@ -22,18 +22,18 @@ const DEFAULTS: Omit<Settings, 'id' | 'updated_at'> = {
   name: 'BrightGrillzz',
   tagline: 'Premium BBQ',
   phone: '0818 107 0919',
-  email: 'info@brightgrillzz.com',
+  email: 'Brightgrillzzglobal@gmail.com',
   address: '5 Madiana Close, Wuse 2, Abuja, Nigeria',
   hours: 'Open 24/7',
-  bank: 'UBA',
-  account_number: '1028930153',
-  account_name: 'Brightgrillzz Global Ltd',
+  bank: 'OPay',
+  account_number: '8181070919',
+  account_name: 'Adewale Bright',
   accept_online_payments: true,
   notify_new_order: true,
   notify_reservation: true,
   notify_daily_summary: false,
   notify_low_rating: true,
-  notification_email: 'info@brightgrillzz.com',
+  notification_email: 'Brightgrillzzglobal@gmail.com',
 }
 
 export default async function SettingsPage() {
