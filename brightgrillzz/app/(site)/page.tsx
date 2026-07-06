@@ -28,32 +28,28 @@ const heroItem: Variants = {
 
 function StorefrontReviews() {
   const [page, setPage] = useState(1)
-  const [dbReviews, setDbReviews] = useState<any[]>([])
+  const [currentReviews, setCurrentReviews] = useState<any[]>([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function loadReviews() {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('is_published', true)
-      
-      if (data) {
-        setDbReviews(data)
+    async function fetchPage() {
+      setLoading(true)
+      try {
+        const res = await fetch(`/api/reviews/public?page=${page}&limit=3`)
+        const json = await res.json()
+        if (json.data) {
+          setCurrentReviews(json.data)
+          setTotalPages(json.meta.totalPages)
+        }
+      } catch (err) {
+        console.error('Failed to fetch reviews', err)
+      } finally {
+        setLoading(false)
       }
     }
-    loadReviews()
-  }, [])
-
-  const combinedReviews = useMemo(() => {
-    const all = [...REVIEWS, ...dbReviews]
-    return all.sort((a, b) => b.rating - a.rating)
-  }, [dbReviews])
-
-  const pageSize = 3
-  const totalPages = Math.ceil(combinedReviews.length / pageSize)
-  const validPage = Math.min(page, totalPages || 1)
-  const currentReviews = combinedReviews.slice((validPage - 1) * pageSize, validPage * pageSize)
+    fetchPage()
+  }, [page])
 
   return (
     <section className="overflow-hidden px-4 py-20 md:py-28">
@@ -63,7 +59,7 @@ function StorefrontReviews() {
           <h2 className="font-headline text-4xl font-bold tracking-tight md:text-5xl">What Guests Are Saying</h2>
         </Reveal>
 
-        <div className="columns-1 gap-6 md:columns-2 lg:columns-3 min-h-[300px]">
+        <div className="columns-1 gap-6 md:columns-2 lg:columns-3 min-h-[300px] transition-opacity duration-300" style={{ opacity: loading ? 0.5 : 1 }}>
           {currentReviews.map((review) => (
             <div
               key={review.id}
