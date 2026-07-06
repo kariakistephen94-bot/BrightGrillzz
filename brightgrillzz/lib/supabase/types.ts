@@ -107,6 +107,26 @@ export interface ContactMessage {
   created_at: string
 }
 
+export interface Settings {
+  id: number
+  name: string | null
+  tagline: string | null
+  phone: string | null
+  email: string | null
+  address: string | null
+  hours: string | null
+  bank: string | null
+  account_number: string | null
+  account_name: string | null
+  accept_online_payments: boolean
+  notify_new_order: boolean
+  notify_reservation: boolean
+  notify_daily_summary: boolean
+  notify_low_rating: boolean
+  notification_email: string | null
+  updated_at: string
+}
+
 type Row<T> = T
 type Insert<T> = Partial<T>
 type Update<T> = Partial<T>
@@ -128,6 +148,7 @@ export interface Database {
       order_items: TableShape<OrderItem>
       reviews: TableShape<Review>
       contact_messages: TableShape<ContactMessage>
+      settings: TableShape<Settings>
     }
     Views: {
       [key: string]: { Row: Record<string, unknown> }
