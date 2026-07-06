@@ -2,37 +2,40 @@
 
 import * as React from 'react'
 import Image from 'next/image'
-import { ImagePlus, Loader2, Pencil, Plus, Search, Star, Trash2, Utensils, X } from 'lucide-react'
+import { Check, ImagePlus, Loader2, Pencil, Plus, Search, Star, Trash2, Utensils, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatNaira } from '@/lib/format'
 import { PageHeader } from '@/components/admin/ui'
-import type { AdminMenuItem } from '@/lib/supabase/queries'
+import type { AdminMenuItem, MenuFacets, Paged } from '@/lib/supabase/queries'
 import {
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
   toggleMenuItem,
 } from '@/app/admin/(protected)/menu-actions'
+import { Pagination } from './Pagination'
+import { SearchInput } from './SearchInput'
+import { useListNav } from './useListNav'
 
-export function MenuManager({ items }: { items: AdminMenuItem[] }) {
+export function MenuManager({
+  data,
+  facets,
+  q,
+  category,
+}: {
+  data: Paged<AdminMenuItem>
+  facets: MenuFacets
+  q: string
+  category: string
+}) {
+  const { setParams } = useListNav()
   const [modalOpen, setModalOpen] = React.useState(false)
   const [editing, setEditing] = React.useState<AdminMenuItem | null>(null)
-  const [query, setQuery] = React.useState('')
-  const [category, setCategory] = React.useState('All')
   const [pending, startTransition] = React.useTransition()
 
-  const categories = React.useMemo(
-    () => ['All', ...Array.from(new Set(items.map((i) => i.category).filter(Boolean)))],
-    [items],
-  )
-  const availableCount = items.filter((i) => i.isAvailable).length
-
-  const filtered = items.filter((m) => {
-    if (category !== 'All' && m.category !== category) return false
-    const q = query.trim().toLowerCase()
-    if (q && !m.name.toLowerCase().includes(q)) return false
-    return true
-  })
+  const categories = ['All', ...facets.categories]
+  const { total, available } = facets
+  const items = data.rows
 
   const openAdd = () => {
     setEditing(null)
@@ -47,7 +50,7 @@ export function MenuManager({ items }: { items: AdminMenuItem[] }) {
     <div className="space-y-6">
       <PageHeader
         title="Menu"
-        description={items.length ? `${items.length} dishes · ${availableCount} available` : 'Add your dishes to start selling.'}
+        description={total ? `${total} dishes · ${available} available` : 'Add your dishes to start selling.'}
       >
         <button
           onClick={openAdd}
@@ -58,13 +61,13 @@ export function MenuManager({ items }: { items: AdminMenuItem[] }) {
         </button>
       </PageHeader>
 
-      {items.length > 0 && (
+      {total > 0 && (
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="no-scrollbar flex gap-1.5 overflow-x-auto rounded-full border border-border bg-card p-1">
             {categories.map((c) => (
               <button
                 key={c}
-                onClick={() => setCategory(c)}
+                onClick={() => setParams({ category: c === 'All' ? null : c })}
                 className={cn(
                   'shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors',
                   category === c ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
@@ -74,19 +77,11 @@ export function MenuManager({ items }: { items: AdminMenuItem[] }) {
               </button>
             ))}
           </div>
-          <div className="relative w-full lg:w-64">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search dishes…"
-              className="h-10 w-full rounded-full border border-border bg-card pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/25"
-            />
-          </div>
+          <SearchInput initial={q} placeholder="Search dishes…" />
         </div>
       )}
 
-      {items.length === 0 ? (
+      {total === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 p-12 text-center">
           <div className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
             <Utensils className="h-7 w-7" />
@@ -103,9 +98,13 @@ export function MenuManager({ items }: { items: AdminMenuItem[] }) {
             Add your first item
           </button>
         </div>
+      ) : items.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center text-sm text-muted-foreground">
+          No dishes match your filters.
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((item) => (
+          {items.map((item) => (
             <div key={item.id} className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
               <div className="relative aspect-[16/10] overflow-hidden bg-muted">
                 {item.image ? (
@@ -173,11 +172,14 @@ export function MenuManager({ items }: { items: AdminMenuItem[] }) {
         </div>
       )}
 
+      <Pagination page={data.page} pageCount={data.pageCount} total={data.total} pageSize={data.pageSize} />
+
       {modalOpen && (
         <MenuItemModal
           key={editing?.id ?? 'new'}
           editing={editing}
-          categories={categories.filter((c) => c !== 'All')}
+          categories={facets.categories}
+          badges={facets.badges}
           onClose={() => setModalOpen(false)}
         />
       )}
@@ -185,18 +187,68 @@ export function MenuManager({ items }: { items: AdminMenuItem[] }) {
   )
 }
 
+// A few sensible defaults; any badges already used in the menu are merged in.
+const DEFAULT_BADGES = ['Bestseller', 'New', 'Popular', "Chef's Pick", 'Spicy', 'Signature', 'Premium']
+
 function MenuItemModal({
   editing,
   categories,
+  badges,
   onClose,
 }: {
   editing: AdminMenuItem | null
   categories: string[]
+  badges: string[]
   onClose: () => void
 }) {
   const [pending, startTransition] = React.useTransition()
   const [error, setError] = React.useState<string | null>(null)
   const [preview, setPreview] = React.useState<string | null>(editing?.image ?? null)
+
+  // Category is controlled so we can switch to a "type a new one" text field.
+  const [category, setCategory] = React.useState(editing?.category ?? '')
+  const [addingCategory, setAddingCategory] = React.useState(false)
+  // New categories the admin typed this session, plus what to restore on cancel.
+  const [localCategories, setLocalCategories] = React.useState<string[]>([])
+  const [prevCategory, setPrevCategory] = React.useState('')
+
+  const selectableCategories = Array.from(
+    new Set([...categories, ...localCategories, ...(category ? [category] : [])]),
+  )
+
+  const startAddCategory = () => {
+    setPrevCategory(category)
+    setCategory('')
+    setAddingCategory(true)
+  }
+
+  const saveCategory = () => {
+    const trimmed = category.trim()
+    if (trimmed) {
+      setLocalCategories((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]))
+      setCategory(trimmed)
+    } else {
+      setCategory(prevCategory) // nothing typed — restore the previous choice
+    }
+    setAddingCategory(false)
+  }
+
+  const badgeOptions = React.useMemo(
+    () => Array.from(new Set([...DEFAULT_BADGES, ...badges, editing?.badge].filter(Boolean))) as string[],
+    [badges, editing?.badge],
+  )
+
+  // Rating select in 0.5 steps, plus the item's own value if it's off-grid.
+  const editingRating = editing?.rating ?? 0
+  const ratingOptions = React.useMemo(() => {
+    const opts = new Set<number>()
+    for (let r = 0.5; r <= 5.0001; r += 0.5) opts.add(Math.round(r * 10) / 10)
+    if (editingRating) opts.add(editingRating)
+    return Array.from(opts).sort((a, b) => a - b)
+  }, [editingRating])
+
+  // Display order 0..20, extended to cover the item's current order if higher.
+  const orderMax = Math.max(20, editing?.sortOrder ?? 0)
 
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -267,19 +319,88 @@ function MenuItemModal({
               <input name="price" type="number" min={0} defaultValue={editing?.price} required className={inputCls} placeholder="18000" />
             </Field>
             <Field label="Category">
-              <input name="category" list="cat-list" defaultValue={editing?.category} className={inputCls} placeholder="Signature" />
-              <datalist id="cat-list">
-                {categories.map((c) => <option key={c} value={c} />)}
-              </datalist>
+              {/* The saved value always comes from this hidden field. */}
+              <input type="hidden" name="category" value={category} />
+              {addingCategory ? (
+                <div className="flex gap-2">
+                  <input
+                    autoFocus
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        saveCategory()
+                      }
+                    }}
+                    className={inputCls}
+                    placeholder="New category name"
+                  />
+                  {category.trim() ? (
+                    <button
+                      type="button"
+                      onClick={saveCategory}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      Save
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={saveCategory}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-border px-3 text-sm font-medium text-muted-foreground hover:bg-muted"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className={cn(inputCls, 'cursor-pointer')}
+                  >
+                    <option value="">Uncategorised</option>
+                    {selectableCategories.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={startAddCategory}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-border px-3 text-sm font-medium text-primary hover:bg-primary/10"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    New
+                  </button>
+                </div>
+              )}
             </Field>
-            <Field label="Badge (optional)">
-              <input name="badge" defaultValue={editing?.badge ?? ''} className={inputCls} placeholder="BESTSELLER" />
+            <Field label="Badge">
+              <select name="badge" defaultValue={editing?.badge ?? ''} className={cn(inputCls, 'cursor-pointer')}>
+                <option value="">None</option>
+                {badgeOptions.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
             </Field>
-            <Field label="Rating (0–5)">
-              <input name="rating" type="number" min={0} max={5} step={0.1} defaultValue={editing?.rating || ''} className={inputCls} placeholder="4.8" />
+            <Field label="Rating">
+              <select name="rating" defaultValue={String(editing?.rating ?? 0)} className={cn(inputCls, 'cursor-pointer')}>
+                <option value="0">No rating</option>
+                {ratingOptions.map((r) => (
+                  <option key={r} value={r}>{r.toFixed(1)} ★</option>
+                ))}
+              </select>
             </Field>
             <Field label="Display order">
-              <input name="sort_order" type="number" defaultValue={editing?.sortOrder ?? 0} className={inputCls} placeholder="0" />
+              <select name="sort_order" defaultValue={String(editing?.sortOrder ?? 0)} className={cn(inputCls, 'cursor-pointer')}>
+                {Array.from({ length: orderMax + 1 }, (_, n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
             </Field>
           </div>
 

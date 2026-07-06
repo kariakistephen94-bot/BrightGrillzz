@@ -4,8 +4,10 @@ import * as React from 'react'
 import { Loader2, Star, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageHeader, Pill } from '@/components/admin/ui'
-import type { AdminReviewRow } from '@/lib/supabase/queries'
+import type { AdminReviewRow, Paged, ReviewStats } from '@/lib/supabase/queries'
 import { deleteReview, setReviewPublished } from '@/app/admin/(protected)/actions'
+import { Pagination } from './Pagination'
+import { useListNav } from './useListNav'
 
 const TABS = [
   { key: 'all', label: 'All' },
@@ -25,25 +27,21 @@ function Stars({ rating, className }: { rating: number; className?: string }) {
   )
 }
 
-export function ReviewsView({ reviews }: { reviews: AdminReviewRow[] }) {
-  const [tab, setTab] = React.useState<TabKey>('all')
-
-  const publishedCount = reviews.filter((r) => r.published).length
-  const avg = reviews.length
-    ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
-    : '0.0'
-
-  const distribution = [5, 4, 3, 2, 1].map((star) => ({
-    star,
-    count: reviews.filter((r) => r.rating === star).length,
-  }))
-  const maxCount = Math.max(...distribution.map((d) => d.count), 1)
-
-  const filtered = reviews.filter((r) => {
-    if (tab === 'published') return r.published
-    if (tab === 'hidden') return !r.published
-    return true
-  })
+export function ReviewsView({
+  data,
+  stats,
+  tab,
+}: {
+  data: Paged<AdminReviewRow>
+  stats: ReviewStats
+  tab: TabKey
+}) {
+  const { setParams } = useListNav()
+  const reviews = data.rows
+  const avg = stats.avg.toFixed(1)
+  const maxCount = Math.max(...stats.distribution.map((d) => d.count), 1)
+  const tabCount = (key: TabKey) =>
+    key === 'all' ? stats.total : key === 'published' ? stats.published : stats.hidden
 
   return (
     <div className="space-y-6">
@@ -52,14 +50,14 @@ export function ReviewsView({ reviews }: { reviews: AdminReviewRow[] }) {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
           <p className="text-5xl font-bold tracking-tight text-foreground">{avg}</p>
-          <Stars rating={Math.round(Number(avg))} className="mt-2" />
-          <p className="mt-2 text-sm text-muted-foreground">{reviews.length} reviews</p>
+          <Stars rating={Math.round(stats.avg)} className="mt-2" />
+          <p className="mt-2 text-sm text-muted-foreground">{stats.total} reviews</p>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
           <h2 className="text-sm font-semibold text-foreground">Rating distribution</h2>
           <div className="mt-4 space-y-2.5">
-            {distribution.map((d) => (
+            {stats.distribution.map((d) => (
               <div key={d.star} className="flex items-center gap-3 text-sm">
                 <span className="flex w-8 items-center gap-1 text-muted-foreground">
                   {d.star}
@@ -79,31 +77,31 @@ export function ReviewsView({ reviews }: { reviews: AdminReviewRow[] }) {
         {TABS.map((t) => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
+            onClick={() => setParams({ tab: t.key === 'all' ? null : t.key })}
             className={cn(
               'rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors',
               tab === t.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
             )}
           >
             {t.label}
-            <span className="ml-1.5 text-xs opacity-70">
-              {t.key === 'all' ? reviews.length : t.key === 'published' ? publishedCount : reviews.length - publishedCount}
-            </span>
+            <span className="ml-1.5 text-xs opacity-70">{tabCount(t.key)}</span>
           </button>
         ))}
       </div>
 
       {reviews.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center text-sm text-muted-foreground">
-          No reviews yet.
+          {stats.total === 0 ? 'No reviews yet.' : 'No reviews in this view.'}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {filtered.map((r) => (
+          {reviews.map((r) => (
             <ReviewCard key={r.id} review={r} />
           ))}
         </div>
       )}
+
+      <Pagination page={data.page} pageCount={data.pageCount} total={data.total} pageSize={data.pageSize} />
     </div>
   )
 }

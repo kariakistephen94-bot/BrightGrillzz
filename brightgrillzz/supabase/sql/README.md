@@ -13,8 +13,10 @@ safe.
 | 5 | `05_seed.sql` | Seeds the menu, categories and reviews |
 | 6 | `06_analytics.sql` | Dashboard views + `get_admin_overview()` |
 | 7 | `07_promote_admin.sql` | Makes a user an admin (edit the email first) |
+| 8 | `08_order_ops.sql` | Cancellation note column, updated tracking RPC, range-aware `get_admin_analytics()` |
+| 9 | `09_delivery.sql` | `out_for_delivery` status, rider number, customer `confirm_delivery()` + 24h auto-complete |
 
-You can also paste all seven back-to-back in one query — they're ordered to
+You can also paste all nine back-to-back in one query — they're ordered to
 run top to bottom.
 
 ## Get your keys

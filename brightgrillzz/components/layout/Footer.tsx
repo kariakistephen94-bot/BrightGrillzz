@@ -22,7 +22,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm md:text-base leading-relaxed text-white/60 max-w-md">
-              Abuja&apos;s home of luxury barbecue — flame-grilled proteins, bold flavours and
+              Abuja&apos;s home of luxury barbecue flame-grilled proteins, bold flavours and
               premium cuts. Open 24/7 and trusted by celebrities and connoisseurs across the city.
             </p>
             <p className="text-sm font-semibold text-white">{CONTACT.hours}</p>

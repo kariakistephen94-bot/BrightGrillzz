@@ -7,6 +7,7 @@ export type OrderStatus =
   | 'pending'
   | 'preparing'
   | 'ready'
+  | 'out_for_delivery'
   | 'completed'
   | 'cancelled'
 export type FulfillmentType = 'delivery' | 'pickup'
@@ -65,6 +66,9 @@ export interface Order {
   payment_method: PaymentMethod
   payment_reference: string | null
   payment_confirmed: boolean
+  cancellation_note: string | null
+  rider_number: string | null
+  out_for_delivery_at: string | null
   created_at: string
   updated_at: string
 }
@@ -142,6 +146,18 @@ export interface Database {
       }
       get_order_by_tracking: {
         Args: { p_tracking_id: string }
+        Returns: unknown
+      }
+      get_admin_analytics: {
+        Args: { p_range?: string }
+        Returns: unknown
+      }
+      confirm_delivery: {
+        Args: { p_tracking_id: string }
+        Returns: unknown
+      }
+      complete_stale_deliveries: {
+        Args: Record<string, never>
         Returns: unknown
       }
     }

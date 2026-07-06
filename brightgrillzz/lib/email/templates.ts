@@ -224,6 +224,123 @@ export function newOrderAlertEmail(o: OrderEmailPayload): BuiltEmail {
   }
 }
 
+/* --------------------------- status updates ---------------------------- */
+
+export type OrderStatusEventKind =
+  | 'preparing'
+  | 'ready'
+  | 'out_for_delivery'
+  | 'delivered'
+  | 'cancelled'
+  | 'payment_confirmed'
+
+export interface OrderStatusEmailPayload {
+  trackingId: string
+  customerName: string
+  fulfillmentType: 'delivery' | 'pickup'
+  total: number
+  /** Optional admin message — required for a cancellation. */
+  note?: string
+  /** Rider phone — included on an out-for-delivery notice. */
+  riderNumber?: string
+}
+
+const STATUS_COPY: Record<
+  OrderStatusEventKind,
+  { badge: string; badgeColor: string; heading: (name: string) => string; body: (p: OrderStatusEmailPayload) => string; subject: (id: string) => string }
+> = {
+  preparing: {
+    badge: 'On the grill',
+    badgeColor: BURGUNDY,
+    heading: (n) => `Your order is on the grill, ${n}! 🔥`,
+    body: () => `Our kitchen has started preparing your order. We&rsquo;ll let you know the moment it&rsquo;s ready.`,
+    subject: (id) => `Your BrightGrillzz order ${id} is being prepared`,
+  },
+  ready: {
+    badge: 'Ready',
+    badgeColor: NAVY,
+    heading: (n) => `Good news, ${n} — your order is ready!`,
+    body: (p) =>
+      p.fulfillmentType === 'pickup'
+        ? `Your order is packed and ready for pickup at our kitchen.`
+        : `Your order is packed and about to head out for delivery.`,
+    subject: (id) => `Your BrightGrillzz order ${id} is ready`,
+  },
+  out_for_delivery: {
+    badge: 'Out for delivery',
+    badgeColor: BURGUNDY,
+    heading: (n) => `On its way, ${n}! 🛵`,
+    body: (p) =>
+      p.riderNumber
+        ? `Your order is out for delivery. Your rider&rsquo;s number is <strong>${esc(p.riderNumber)}</strong> — give them a call if you need to. Once it arrives, tap “Confirm delivery” on your tracking page.`
+        : `Your order is out for delivery. Once it arrives, tap “Confirm delivery” on your tracking page.`,
+    subject: (id) => `Your BrightGrillzz order ${id} is out for delivery`,
+  },
+  delivered: {
+    badge: 'Delivered',
+    badgeColor: '#1f8a4c',
+    heading: (n) => `Enjoy your meal, ${n}! 🎉`,
+    body: (p) =>
+      p.fulfillmentType === 'pickup'
+        ? `Your order has been marked as picked up. Thanks for choosing BrightGrillzz — we hope every bite is delicious.`
+        : `Your order has been delivered. Thanks for choosing BrightGrillzz — we hope every bite is delicious.`,
+    subject: (id) => `Your BrightGrillzz order ${id} has been delivered`,
+  },
+  cancelled: {
+    badge: 'Cancelled',
+    badgeColor: BURGUNDY,
+    heading: (n) => `About your order, ${n}`,
+    body: () => `We&rsquo;re sorry — your order has been cancelled. If you were charged, a refund will be arranged. See the note below for details.`,
+    subject: (id) => `Your BrightGrillzz order ${id} was cancelled`,
+  },
+  payment_confirmed: {
+    badge: 'Payment confirmed',
+    badgeColor: '#1f8a4c',
+    heading: (n) => `Payment received, ${n}! ✅`,
+    body: () => `We&rsquo;ve confirmed your bank transfer. Your order is now in the queue and the grill is firing up.`,
+    subject: (id) => `Payment confirmed for BrightGrillzz order ${id}`,
+  },
+}
+
+/** Customer-facing order status update. */
+export function orderStatusEmail(kind: OrderStatusEventKind, p: OrderStatusEmailPayload): BuiltEmail {
+  const firstName = p.customerName.split(/\s+/)[0] || 'there'
+  const copy = STATUS_COPY[kind]
+  const noteBlock = p.note
+    ? `<div style="background:#faf8f5;border:1px solid #e6e2da;border-radius:14px;padding:14px 16px;margin:18px 0;">
+         <div style="font-size:12px;color:#6b6b76;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">A note from us</div>
+         <div style="font-size:14px;line-height:1.6;">${esc(p.note)}</div>
+       </div>`
+    : ''
+  const body = `
+    <div style="display:inline-block;background:${copy.badgeColor}1a;color:${copy.badgeColor};font-size:12px;font-weight:700;padding:4px 12px;border-radius:999px;text-transform:uppercase;letter-spacing:.5px;">${esc(copy.badge)}</div>
+    <h1 style="margin:12px 0 6px;font-size:22px;">${esc(copy.heading(firstName))}</h1>
+    <p style="margin:0 0 4px;color:#6b6b76;font-size:14px;line-height:1.6;">${copy.body(p)}</p>
+    ${noteBlock}
+    <div style="background:#faf8f5;border:1px solid #e6e2da;border-radius:14px;padding:14px 16px;margin:20px 0;">
+      <div style="font-size:12px;color:#6b6b76;text-transform:uppercase;letter-spacing:.5px;">Tracking ID</div>
+      <div style="font-size:20px;font-weight:700;color:${NAVY};letter-spacing:.5px;">${esc(p.trackingId)}</div>
+      <div style="font-size:13px;color:#6b6b76;margin-top:4px;">Total ${naira(p.total)}</div>
+    </div>
+    <a href="${esc(CONTACT.whatsapp)}" style="display:inline-block;margin-top:8px;background:${NAVY};color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 22px;border-radius:999px;">
+      Message us on WhatsApp
+    </a>
+  `
+  return {
+    subject: copy.subject(p.trackingId),
+    html: shell(copy.subject(p.trackingId), body),
+    text: [
+      copy.heading(firstName).replace(/[🔥🎉✅]/gu, '').trim(),
+      copy.body(p).replace(/&rsquo;/g, "'").replace(/<[^>]+>/g, ''),
+      p.note ? `Note: ${p.note}` : '',
+      `Tracking ID: ${p.trackingId}`,
+      `Total: ${naira(p.total)}`,
+    ]
+      .filter(Boolean)
+      .join('\n'),
+  }
+}
+
 /** Internal alert for a reservation / contact request. */
 export function reservationAlertEmail(r: ReservationEmailPayload): BuiltEmail {
   const line = (label: string, value?: string) =>

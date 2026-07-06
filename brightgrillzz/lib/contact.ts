@@ -180,20 +180,21 @@ export const FULL_MENU: MenuItem[] = [
   },
 ]
 
-// Gallery (real grill photography)
+// Gallery (view-only grill photography from public/gallery)
 export const GALLERY_ITEMS = [
-  { id: 1, title: 'Royal Platter', category: 'Signature', image: '/images/royal-platter.jpg' },
-  { id: 2, title: 'Live Charcoal Grill', category: 'Barbecue', image: '/images/hero.jpg' },
-  { id: 3, title: 'Grilled Fish', category: 'Seafood', image: '/images/grilled-fish.jpg' },
-  { id: 4, title: 'Carne Asada', category: 'Meat', image: '/images/carne-asada.jpg' },
-  { id: 5, title: 'Seafood Selection', category: 'Premium', image: '/images/king-crab.jpg' },
-  { id: 6, title: 'BBQ Ribs', category: 'Barbecue', image: '/images/bbq-ribs.jpg' },
-  { id: 7, title: 'Beef Skewers', category: 'Kebab', image: '/images/kebab.jpg' },
-  { id: 8, title: 'Flame Burger', category: 'Burger', image: '/images/burger.jpg' },
-  { id: 9, title: 'Glazed Chicken', category: 'Chicken', image: '/images/chicken-satay.jpg' },
-  { id: 10, title: 'Grilled Drumsticks', category: 'Chicken', image: '/images/chicken-drumsticks.jpg' },
-  { id: 11, title: 'Smoky Brisket', category: 'Barbecue', image: '/images/smoky-brisket.jpg' },
-  { id: 12, title: 'Beef Tenderloin', category: 'Premium', image: '/images/beef-tenderloin.jpg' },
+  { id: 1, image: '/gallery/image1.jpg' },
+  { id: 2, image: '/gallery/image2.jpeg' },
+  { id: 3, image: '/gallery/image3.jpg' },
+  { id: 4, image: '/gallery/image4.jpg' },
+  { id: 5, image: '/gallery/image5.jpeg' },
+  { id: 6, image: '/gallery/image6.jpg' },
+  { id: 7, image: '/gallery/image7.jpg' },
+  { id: 8, image: '/gallery/image8.jpg' },
+  { id: 9, image: '/gallery/image9.jpg' },
+  { id: 10, image: '/gallery/image10.jpg' },
+  { id: 11, image: '/gallery/image11.jpeg' },
+  { id: 12, image: '/gallery/image12.jpg' },
+  { id: 13, image: '/gallery/image13.jpg' },
 ]
 
 // Menu Categories

@@ -8,9 +8,12 @@ import {
 import {
   newOrderAlertEmail,
   orderConfirmationEmail,
+  orderStatusEmail,
   reservationAlertEmail,
   type BuiltEmail,
   type OrderEmailPayload,
+  type OrderStatusEmailPayload,
+  type OrderStatusEventKind,
   type ReservationEmailPayload,
 } from './templates'
 
@@ -65,6 +68,24 @@ export async function sendOrderEmails(order: OrderEmailPayload): Promise<SendRes
     console.error('[email] order email failures:', failed.map((f) => f.error).join('; '))
   }
   return { sent: results.some((r) => r.sent) }
+}
+
+/** Customer-facing order status update (preparing, ready, delivered, cancelled, payment confirmed). */
+export async function sendOrderStatusEmail(
+  kind: OrderStatusEventKind,
+  to: string,
+  payload: OrderStatusEmailPayload,
+): Promise<SendResult> {
+  if (!isEmailConfigured) {
+    console.warn('[email] RESEND_API_KEY not set — skipping status email')
+    return { sent: false, skipped: true }
+  }
+  if (!to) return { sent: false, skipped: true }
+  const result = await deliver(to, orderStatusEmail(kind, payload), NOTIFICATION_EMAIL)
+  if (!result.sent && result.error) {
+    console.error(`[email] status email (${kind}) failed:`, result.error)
+  }
+  return result
 }
 
 /** Restaurant alert for a reservation / contact request. */

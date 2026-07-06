@@ -1,15 +1,25 @@
 'use client'
 
 import Image from 'next/image'
+import { useCallback, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Minus, Plus, Star, Utensils } from 'lucide-react'
 import { useCart } from '@/context/cart-context'
+import { cn } from '@/lib/utils'
 import { formatNaira } from '@/lib/format'
 import type { MenuItem } from '@/lib/menu'
 
 export function MenuItemCard({ item }: { item: MenuItem }) {
   const { items, addItem, updateQty } = useCart()
   const qty = items.find((i) => i.cartId === item.id)?.qty ?? 0
+
+  // Expandable description: only surface the toggle when the text is actually
+  // clamped. Measured via a callback ref (no effect → no cascading render).
+  const [expanded, setExpanded] = useState(false)
+  const [isClamped, setIsClamped] = useState(false)
+  const measureRef = useCallback((node: HTMLParagraphElement | null) => {
+    if (node) setIsClamped(node.scrollHeight - node.clientHeight > 1)
+  }, [])
 
   const add = () =>
     addItem({ id: item.id, name: item.name, price: item.price, image: item.image ?? '' })
@@ -75,9 +85,26 @@ export function MenuItemCard({ item }: { item: MenuItem }) {
           </p>
         )}
         {item.description && (
-          <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-muted-foreground md:mt-1.5 md:line-clamp-2 md:text-sm">
-            {item.description}
-          </p>
+          <div className="mt-1 md:mt-1.5">
+            <p
+              ref={measureRef}
+              className={cn(
+                'text-xs leading-relaxed text-muted-foreground md:text-sm',
+                !expanded && 'line-clamp-1',
+              )}
+            >
+              {item.description}
+            </p>
+            {(isClamped || expanded) && (
+              <button
+                type="button"
+                onClick={() => setExpanded((v) => !v)}
+                className="mt-0.5 text-xs font-semibold text-primary hover:underline md:text-sm"
+              >
+                {expanded ? 'Show less' : 'Show more'}
+              </button>
+            )}
+          </div>
         )}
 
         {/* Price (own line — always visible) */}

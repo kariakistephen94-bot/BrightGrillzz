@@ -1,11 +1,13 @@
 'use client'
 
 import * as React from 'react'
-import { Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatNaira } from '@/lib/format'
 import { PageHeader } from '@/components/admin/ui'
-import type { AdminCustomerRow } from '@/lib/supabase/queries'
+import type { AdminCustomerRow, CustomerStats, Paged } from '@/lib/supabase/queries'
+import { Pagination } from './Pagination'
+import { SearchInput } from './SearchInput'
+import { useListNav } from './useListNav'
 
 type Segment = 'vip' | 'returning' | 'new'
 
@@ -26,32 +28,29 @@ function initials(name: string) {
   return name.split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('')
 }
 
-export function CustomersView({ customers }: { customers: AdminCustomerRow[] }) {
-  const [segment, setSegment] = React.useState<Segment | 'all'>('all')
-  const [query, setQuery] = React.useState('')
-
-  const filtered = customers.filter((c) => {
-    if (segment !== 'all' && c.segment !== segment) return false
-    const q = query.trim().toLowerCase()
-    if (q && !(c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q))) return false
-    return true
-  })
-
-  const totalSpent = customers.reduce((s, c) => s + c.spent, 0)
-  const avgSpent = customers.length ? Math.round(totalSpent / customers.length) : 0
-  const vips = customers.filter((c) => c.segment === 'vip').length
-  const repeat = customers.filter((c) => c.orders > 1).length
-  const repeatRate = customers.length ? Math.round((repeat / customers.length) * 100) : 0
+export function CustomersView({
+  data,
+  stats,
+  q,
+  segment,
+}: {
+  data: Paged<AdminCustomerRow>
+  stats: CustomerStats
+  q: string
+  segment: Segment | 'all'
+}) {
+  const { setParams } = useListNav()
+  const customers = data.rows
 
   return (
     <div className="space-y-6">
       <PageHeader title="Customers" description="Your guests, ranked by spend and loyalty." />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <MiniStat label="Total customers" value={String(customers.length)} />
-        <MiniStat label="VIPs" value={String(vips)} tone="chart-3" />
-        <MiniStat label="Avg. lifetime spend" value={formatNaira(avgSpent)} tone="primary" />
-        <MiniStat label="Repeat rate" value={`${repeatRate}%`} tone="success" />
+        <MiniStat label="Total customers" value={stats.total.toLocaleString()} />
+        <MiniStat label="VIPs" value={String(stats.vips)} tone="chart-3" />
+        <MiniStat label="Avg. lifetime spend" value={formatNaira(stats.avgSpent)} tone="primary" />
+        <MiniStat label="Repeat rate" value={`${stats.repeatRate}%`} tone="success" />
       </div>
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -59,7 +58,7 @@ export function CustomersView({ customers }: { customers: AdminCustomerRow[] }) 
           {SEGMENTS.map((s) => (
             <button
               key={s.key}
-              onClick={() => setSegment(s.key)}
+              onClick={() => setParams({ segment: s.key === 'all' ? null : s.key })}
               className={cn(
                 'shrink-0 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors',
                 segment === s.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
@@ -70,15 +69,7 @@ export function CustomersView({ customers }: { customers: AdminCustomerRow[] }) 
           ))}
         </div>
 
-        <div className="relative w-full lg:w-72">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search customers…"
-            className="h-10 w-full rounded-full border border-border bg-card pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/25"
-          />
-        </div>
+        <SearchInput initial={q} placeholder="Search customers…" />
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -95,7 +86,7 @@ export function CustomersView({ customers }: { customers: AdminCustomerRow[] }) 
               </tr>
             </thead>
             <tbody>
-              {filtered.map((c) => (
+              {customers.map((c) => (
                 <tr key={c.id} className="border-b border-border/60 last:border-0 transition-colors hover:bg-muted/40">
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-3">
@@ -119,10 +110,10 @@ export function CustomersView({ customers }: { customers: AdminCustomerRow[] }) 
                   </td>
                 </tr>
               ))}
-              {filtered.length === 0 && (
+              {customers.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-5 py-16 text-center text-sm text-muted-foreground">
-                    {customers.length === 0 ? 'No customers yet.' : 'No customers match your filters.'}
+                    {stats.total === 0 ? 'No customers yet.' : 'No customers match your filters.'}
                   </td>
                 </tr>
               )}
@@ -130,6 +121,8 @@ export function CustomersView({ customers }: { customers: AdminCustomerRow[] }) 
           </table>
         </div>
       </div>
+
+      <Pagination page={data.page} pageCount={data.pageCount} total={data.total} pageSize={data.pageSize} />
     </div>
   )
 }

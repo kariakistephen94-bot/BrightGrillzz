@@ -7,7 +7,6 @@ import { CheckCircle2, MapPin, ArrowRight, Download, Loader2 } from 'lucide-reac
 import { Button } from '@/components/ui/Button'
 import { CopyButton } from '@/components/ui/CopyButton'
 import { WhatsAppIcon } from '@/components/icons/WhatsAppIcon'
-import { ReviewPrompt } from '@/components/ReviewPrompt'
 import { getLastOrder, getOrderByTrackingId, getPaymentMethod, paymentMethodLabel, type Order } from '@/lib/orders'
 import { formatNaira } from '@/lib/format'
 import { getWhatsAppOrderUrl } from '@/lib/whatsapp'
@@ -143,8 +142,6 @@ function ConfirmationContent() {
             </a>
           </Button>
         </div>
-
-        <ReviewPrompt defaultName={order.customer.fullName} />
 
         <div className="mt-8 text-center">
           <Button asChild variant="link" className="text-muted-foreground">

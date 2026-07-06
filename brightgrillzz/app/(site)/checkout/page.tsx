@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Loader2, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Loader2, ShieldCheck, Utensils } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
@@ -372,7 +372,13 @@ export default function CheckoutPage() {
                 {items.map((item) => (
                   <div key={item.cartId} className="flex gap-2 sm:gap-3 items-center">
                     <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl overflow-hidden shrink-0 bg-muted">
-                      <Image src={item.image} alt={item.name} fill className="object-cover" sizes="56px" />
+                      {item.image ? (
+                        <Image src={item.image} alt={item.name} fill unoptimized className="object-cover" sizes="56px" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-primary/30">
+                          <Utensils className="w-5 h-5" />
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-xs sm:text-sm truncate">{item.name}</p>

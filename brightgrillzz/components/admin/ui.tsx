@@ -5,8 +5,13 @@ export type OrderStatus =
   | 'pending'
   | 'preparing'
   | 'ready'
+  | 'out_for_delivery'
   | 'completed'
   | 'cancelled'
+
+/** Human label for a status (enum values can carry underscores). */
+export const statusLabel = (status: OrderStatus): string =>
+  status === 'out_for_delivery' ? 'Out for delivery' : status
 
 /** Page title + subtitle with an optional actions slot on the right. */
 export function PageHeader({
@@ -37,6 +42,7 @@ const orderStatusStyles: Record<OrderStatus, string> = {
   completed: 'bg-success/10 text-success',
   preparing: 'bg-primary/10 text-primary',
   ready: 'bg-chart-4/15 text-chart-4',
+  out_for_delivery: 'bg-secondary/10 text-secondary',
   pending: 'bg-chart-3/15 text-chart-3',
   cancelled: 'bg-destructive/10 text-destructive',
 }
@@ -57,7 +63,7 @@ export function StatusBadge({
       )}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {status}
+      {statusLabel(status)}
     </span>
   )
 }

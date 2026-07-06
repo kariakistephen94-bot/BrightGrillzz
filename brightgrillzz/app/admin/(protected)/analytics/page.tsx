@@ -1,5 +1,6 @@
-import { CalendarDays } from 'lucide-react'
+import Link from 'next/link'
 import { formatNaira } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/admin/ui'
 import { StatCard } from '@/components/admin/StatCard'
 import {
@@ -8,83 +9,125 @@ import {
   CategoryDonut,
   AovLineChart,
 } from '@/components/admin/charts'
-import {
-  getOverview,
-  getRevenueByWeek,
-  getOrdersByWeekday,
-  getSalesByCategory,
-  getTopItems,
-  getOrders,
-} from '@/lib/supabase/queries'
+import { getAnalytics, type AnalyticsRange } from '@/lib/supabase/queries'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AnalyticsPage() {
-  const [overview, revenueByWeek, ordersByWeekday, salesByCategory, topItems, orders] =
-    await Promise.all([
-      getOverview(),
-      getRevenueByWeek(),
-      getOrdersByWeekday(),
-      getSalesByCategory(),
-      getTopItems(),
-      getOrders(),
-    ])
+const RANGES: { key: AnalyticsRange; label: string; hint: string }[] = [
+  { key: '24h', label: '24 hours', hint: 'vs. previous 24 hours' },
+  { key: '7d', label: 'Last 7 days', hint: 'vs. previous 7 days' },
+  { key: '30d', label: 'Last 30 days', hint: 'vs. previous 30 days' },
+  { key: '3m', label: 'Last 3 months', hint: 'vs. previous 3 months' },
+  { key: '1y', label: 'Yearly', hint: 'vs. previous year' },
+]
 
-  const aovTrend = revenueByWeek.map((w) => ({
-    period: w.period,
-    aov: w.orders ? Math.round(w.revenue / w.orders) : 0,
+const hourFmt = new Intl.DateTimeFormat('en-NG', { hour: 'numeric' })
+const dayFmt = new Intl.DateTimeFormat('en-NG', { month: 'short', day: 'numeric' })
+const monthFmt = new Intl.DateTimeFormat('en-NG', { month: 'short' })
+
+function labelFor(ts: string, bucket: string): string {
+  const d = new Date(ts)
+  if (bucket === 'hour') return hourFmt.format(d)
+  if (bucket === 'month') return monthFmt.format(d)
+  return dayFmt.format(d) // day + week
+}
+
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string }>
+}) {
+  const rangeParam = (await searchParams).range
+  const range: AnalyticsRange = RANGES.some((r) => r.key === rangeParam)
+    ? (rangeParam as AnalyticsRange)
+    : '30d'
+  const active = RANGES.find((r) => r.key === range)!
+
+  const data = await getAnalytics(range)
+
+  const series = data.series.map((s) => ({
+    label: labelFor(s.ts, data.bucket),
+    revenue: s.revenue,
+    orders: s.orders,
+  }))
+  const revenueSeries = series.map((s) => ({ period: s.label, revenue: s.revenue }))
+  const ordersSeries = series.map((s) => ({ day: s.label, orders: s.orders }))
+  const aovTrend = series.map((s) => ({
+    period: s.label,
+    aov: s.orders ? Math.round(s.revenue / s.orders) : 0,
+  }))
+
+  const catTotal = data.by_category.reduce((s, c) => s + c.revenue, 0) || 1
+  const salesByCategory = data.by_category.map((c, i) => ({
+    category: c.category,
+    value: Math.round((c.revenue / catTotal) * 100),
+    key: `${c.category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${i}`,
   }))
 
   const pct = (n: number, total: number) => (total ? Math.round((n / total) * 100) : 0)
-  const total = orders.length
+  const totalOrders = data.kpis.orders
   const fulfillmentSplit = [
-    { name: 'Delivery', key: 'delivery', value: pct(orders.filter((o) => o.fulfillment === 'delivery').length, total) },
-    { name: 'Pickup', key: 'pickup', value: pct(orders.filter((o) => o.fulfillment === 'pickup').length, total) },
+    { name: 'Delivery', key: 'delivery', value: pct(data.splits.delivery, totalOrders) },
+    { name: 'Pickup', key: 'pickup', value: pct(data.splits.pickup, totalOrders) },
   ]
   const paymentSplit = [
-    { name: 'Paystack', key: 'paystack', value: pct(orders.filter((o) => o.payment === 'paystack').length, total) },
-    { name: 'Bank transfer', key: 'bank', value: pct(orders.filter((o) => o.payment === 'bank_transfer').length, total) },
+    { name: 'Paystack', key: 'paystack', value: pct(data.splits.paystack, totalOrders) },
+    { name: 'Bank transfer', key: 'bank', value: pct(data.splits.bank_transfer, totalOrders) },
   ]
+  const topItems = data.top_items
   const maxItemOrders = Math.max(...topItems.map((t) => t.orders), 1)
 
   return (
     <div className="space-y-6">
       <PageHeader title="Analytics" description="Performance across revenue, orders and menu.">
-        <button className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-medium text-foreground">
-          <CalendarDays className="h-4 w-4 text-muted-foreground" />
-          Last 12 weeks
-        </button>
+        <div className="no-scrollbar flex gap-1.5 overflow-x-auto rounded-full border border-border bg-card p-1">
+          {RANGES.map((r) => (
+            <Link
+              key={r.key}
+              href={`/admin/analytics?range=${r.key}`}
+              scroll={false}
+              className={cn(
+                'inline-flex shrink-0 items-center rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors',
+                r.key === range
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {r.label}
+            </Link>
+          ))}
+        </div>
       </PageHeader>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Revenue" value={formatNaira(overview.revenue_30d)} delta={overview.revenue_delta_pct} hint="vs. previous 30 days" />
-        <StatCard label="Orders" value={overview.orders_30d.toLocaleString()} delta={overview.orders_delta_pct} hint="vs. previous 30 days" />
-        <StatCard label="Avg. Order Value" value={formatNaira(overview.avg_order_value)} hint="last 30 days" />
-        <StatCard label="New Customers" value={overview.new_customers_30d.toLocaleString()} hint="last 30 days" />
+        <StatCard label="Total Revenue" value={formatNaira(data.kpis.revenue)} delta={data.kpis.revenue_delta_pct} hint={active.hint} />
+        <StatCard label="Orders" value={data.kpis.orders.toLocaleString()} delta={data.kpis.orders_delta_pct} hint={active.hint} />
+        <StatCard label="Avg. Order Value" value={formatNaira(data.kpis.avg_order_value)} hint={active.label.toLowerCase()} />
+        <StatCard label="Customers" value={data.kpis.customers.toLocaleString()} hint={active.label.toLowerCase()} />
       </div>
 
       <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <h2 className="text-base font-semibold text-foreground">Revenue overview</h2>
-        <p className="text-sm text-muted-foreground">Weekly revenue, last 12 weeks</p>
+        <p className="text-sm text-muted-foreground">Revenue · {active.label.toLowerCase()}</p>
         <div className="mt-4">
-          <RevenueAreaChart data={revenueByWeek} />
+          <RevenueAreaChart data={revenueSeries} />
         </div>
       </section>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
           <h2 className="text-base font-semibold text-foreground">Average order value</h2>
-          <p className="text-sm text-muted-foreground">Trend across the last 12 weeks</p>
+          <p className="text-sm text-muted-foreground">Trend · {active.label.toLowerCase()}</p>
           <div className="mt-4">
             <AovLineChart data={aovTrend} />
           </div>
         </section>
 
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-foreground">Orders by day</h2>
-          <p className="text-sm text-muted-foreground">Orders per weekday</p>
+          <h2 className="text-base font-semibold text-foreground">Orders over time</h2>
+          <p className="text-sm text-muted-foreground">Orders · {active.label.toLowerCase()}</p>
           <div className="mt-4">
-            <OrdersBarChart data={ordersByWeekday} />
+            <OrdersBarChart data={ordersSeries} />
           </div>
         </section>
       </div>
@@ -113,7 +156,7 @@ export default async function AnalyticsPage() {
 
       <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <h2 className="text-base font-semibold text-foreground">Top selling items</h2>
-        <p className="text-sm text-muted-foreground">By quantity ordered</p>
+        <p className="text-sm text-muted-foreground">By quantity ordered · {active.label.toLowerCase()}</p>
         {topItems.length === 0 ? (
           <p className="mt-6 text-sm text-muted-foreground">No sales yet.</p>
         ) : (

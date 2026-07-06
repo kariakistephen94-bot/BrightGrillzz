@@ -80,7 +80,7 @@ export default function Home() {
             variants={heroItem}
             className="mx-auto mt-6 max-w-2xl text-base font-light leading-relaxed text-white/85 sm:text-lg md:text-xl"
           >
-            Abuja&apos;s home of luxury barbecue — open 24/7 and trusted by celebrities,
+            Abuja&apos;s home of luxury barbecue open 24/7 and trusted by celebrities,
             tastemakers and food connoisseurs across the city.
           </motion.p>
 

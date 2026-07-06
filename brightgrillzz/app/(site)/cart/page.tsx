@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Trash2, Plus, Minus, ArrowRight, ShieldCheck, Truck, Clock } from 'lucide-react'
+import { Trash2, Plus, Minus, ArrowRight, ShieldCheck, Truck, Clock, Utensils } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useCart } from '@/context/cart-context'
 import { formatNaira } from '@/lib/format'
@@ -28,13 +28,20 @@ export default function CartPage() {
                 className="glass-card rounded-xl sm:rounded-2xl md:rounded-3xl p-3 sm:p-4 flex gap-3 sm:gap-4 md:gap-6 items-center shadow-md"
               >
                 <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-lg sm:rounded-xl md:rounded-2xl overflow-hidden shrink-0 bg-muted">
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 64px, (max-width: 768px) 80px, 96px"
-                  />
+                  {item.image ? (
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                      sizes="(max-width: 640px) 64px, (max-width: 768px) 80px, 96px"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-primary/30">
+                      <Utensils className="w-6 h-6" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex-1 min-w-0">
