@@ -235,8 +235,7 @@ export default function Home() {
             variants={heroItem}
             className="mx-auto mt-6 max-w-2xl text-base font-light leading-relaxed text-white/85 sm:text-lg md:text-xl"
           >
-            From quiet dinners to headline celebrations, Bright Grillzz brings the flame, the flavour and the
-            theatre of open fire straight to your table, plated with the precision of a private kitchen.
+            Feed the body that works the money as we add happiness to your happy life with delicious grills.
           </motion.p>
 
           <motion.div

@@ -27,9 +27,6 @@ export default function Footer({ settings }: { settings: SiteSettings }) {
               Abuja&apos;s home of luxury barbecue flame-grilled proteins, bold flavours and
               premium cuts. Trusted by celebrities and connoisseurs across the city.
             </p>
-            <p className="text-sm md:text-base font-semibold italic text-secondary max-w-md">
-              Feed the body that works the money, as we add happiness to your happy life with delicious grills.
-            </p>
             <p className="text-sm font-semibold text-white">{settings.hours}</p>
           </div>
 
