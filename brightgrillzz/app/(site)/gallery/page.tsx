@@ -74,26 +74,31 @@ export default function GalleryPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-navy-dark/85 z-[80] flex items-center justify-center p-4"
+            className="fixed inset-0 bg-gray-900/50 backdrop-blur-xl z-[100] flex items-center justify-center p-4 md:p-8"
             onClick={() => setSelected(null)}
           >
+            <button
+              onClick={() => setSelected(null)}
+              className="absolute top-6 right-6 z-10 w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center hover:bg-white/30 transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-6 h-6" />
+            </button>
             <motion.div
               initial={{ scale: 0.92, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.92, opacity: 0 }}
-              className="relative bg-card rounded-[2rem] overflow-hidden max-w-lg w-full shadow-premium"
+              className="relative w-full h-full max-w-7xl flex items-center justify-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="relative aspect-square">
-                <Image src={selected.image} alt="" fill sizes="512px" className="object-cover" />
-                <button
-                  onClick={() => setSelected(null)}
-                  className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 flex items-center justify-center hover:bg-white transition-colors"
-                  aria-label="Close"
-                >
-                  <X className="w-5 h-5 text-navy" />
-                </button>
-              </div>
+              <Image 
+                src={selected.image} 
+                alt="Gallery full view" 
+                fill 
+                sizes="100vw" 
+                className="object-contain" 
+                priority
+              />
             </motion.div>
           </motion.div>
         )}
