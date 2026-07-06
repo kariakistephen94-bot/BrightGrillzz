@@ -10,6 +10,7 @@ import { MenuExplorer } from '@/components/menu/MenuExplorer'
 import { Reveal, RevealGroup, RevealItem } from '@/components/ui/Reveal'
 import { Aurora } from '@/components/ui/Aurora'
 import { CONTACT, STATS, REVIEWS, HERO_IMAGE, ABOUT_IMAGE } from '@/lib/contact'
+import { useSiteSettings } from '@/context/settings-context'
 
 const WHY = [
   { icon: ShieldCheck, title: 'Premium Quality Cuts', desc: 'We source only the finest proteins, hand-picked daily for maximum flavour and tenderness.' },
@@ -112,6 +113,7 @@ function StorefrontReviews() {
 }
 
 export default function Home() {
+  const settings = useSiteSettings()
   return (
     <div className="overflow-hidden">
       {/* ===================== HERO ===================== */}
@@ -339,10 +341,10 @@ export default function Home() {
                   Place an Order
                 </Link>
                 <a
-                  href={`tel:${CONTACT.phone}`}
+                  href={`tel:${settings.phone}`}
                   className="press inline-flex h-14 items-center justify-center rounded-full border border-border bg-card px-9 text-base font-semibold text-foreground transition-colors hover:bg-muted"
                 >
-                  Call {CONTACT.phoneShort}
+                  Call {settings.phone}
                 </a>
               </div>
             </div>

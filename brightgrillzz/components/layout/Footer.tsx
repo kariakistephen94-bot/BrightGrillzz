@@ -2,8 +2,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Instagram, Facebook, MapPin, Mail, Phone, MessageCircle } from 'lucide-react'
 import { CONTACT } from '@/lib/contact'
+import type { SiteSettings } from '@/lib/settings'
 
-export default function Footer() {
+export default function Footer({ settings }: { settings: SiteSettings }) {
   return (
     <footer className="bg-navy-dark text-white/80 pt-14 md:pt-16 pb-28 md:pb-12 border-t border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,7 +26,7 @@ export default function Footer() {
               Abuja&apos;s home of luxury barbecue flame-grilled proteins, bold flavours and
               premium cuts. Open 24/7 and trusted by celebrities and connoisseurs across the city.
             </p>
-            <p className="text-sm font-semibold text-white">{CONTACT.hours}</p>
+            <p className="text-sm font-semibold text-white">{settings.hours}</p>
           </div>
 
           {/* Quick links */}
@@ -44,15 +45,15 @@ export default function Footer() {
             <h4 className="text-white font-bold text-lg tracking-wide uppercase">Connect</h4>
             <ul className="space-y-4 text-sm font-medium">
               <li>
-                <a href={`tel:${CONTACT.phone}`} className="flex items-center gap-3 hover:text-secondary transition-colors">
+                <a href={`tel:${settings.phone}`} className="flex items-center gap-3 hover:text-secondary transition-colors">
                   <Phone className="w-5 h-5 text-secondary" />
-                  {CONTACT.phoneShort}
+                  {settings.phone}
                 </a>
               </li>
               <li>
-                <a href={`mailto:${CONTACT.email}`} className="flex items-center gap-3 hover:text-secondary transition-colors">
+                <a href={`mailto:${settings.email}`} className="flex items-center gap-3 hover:text-secondary transition-colors">
                   <Mail className="w-5 h-5 text-secondary" />
-                  {CONTACT.email}
+                  {settings.email}
                 </a>
               </li>
               <li>
@@ -63,7 +64,7 @@ export default function Footer() {
                   className="flex items-start gap-3 hover:text-secondary transition-colors"
                 >
                   <MapPin className="w-5 h-5 text-secondary shrink-0 mt-0.5" />
-                  {CONTACT.address}
+                  {settings.address}
                 </a>
               </li>
             </ul>

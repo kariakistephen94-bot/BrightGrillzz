@@ -9,8 +9,10 @@ import { Badge } from '@/components/ui/Badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { CONTACT } from '@/lib/contact'
+import { useSiteSettings } from '@/context/settings-context'
 
 export default function ContactPage() {
+  const settings = useSiteSettings()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -90,11 +92,11 @@ export default function ContactPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-muted-foreground">Available 24/7</p>
-                  <a href={`tel:${CONTACT.phone}`} className="text-lg font-bold text-primary hover:text-primary/80">
-                    {CONTACT.phoneShort}
+                  <a href={`tel:${settings.phone}`} className="text-lg font-bold text-primary hover:text-primary/80">
+                    {settings.phone}
                   </a>
                   <Button asChild className="w-full rounded-full" size="sm">
-                    <a href={`tel:${CONTACT.phone}`}>
+                    <a href={`tel:${settings.phone}`}>
                       Call Now
                     </a>
                   </Button>
@@ -144,11 +146,11 @@ export default function ContactPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="text-sm text-muted-foreground">
-                    {CONTACT.address}
+                    {settings.address}
                   </div>
                   <div className="flex items-center gap-2 text-sm font-semibold">
                     <Clock className="w-4 h-4 text-primary" />
-                    {CONTACT.hours}
+                    {settings.hours}
                   </div>
                   <Button asChild className="w-full rounded-full" size="sm" variant="outline">
                     <a href={CONTACT.maps} target="_blank" rel="noopener noreferrer">
@@ -307,8 +309,8 @@ export default function ContactPage() {
               <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mx-auto mb-5 shadow-lg group-hover:scale-110 transition-transform">
                 <MapPin className="w-8 h-8 text-white" />
               </div>
-              <h3 className="font-headline text-2xl md:text-3xl font-bold mb-2">{CONTACT.name}</h3>
-              <p className="text-white/80 max-w-md mx-auto mb-6">{CONTACT.address}</p>
+              <h3 className="font-headline text-2xl md:text-3xl font-bold mb-2">{settings.name}</h3>
+              <p className="text-white/80 max-w-md mx-auto mb-6">{settings.address}</p>
               <span className="inline-flex items-center gap-2 rounded-full bg-white text-primary font-bold px-6 py-3 shadow-lg group-hover:gap-3 transition-all">
                 Open in Google Maps
                 <ArrowRight className="w-4 h-4" />

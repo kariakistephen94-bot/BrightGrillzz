@@ -26,20 +26,23 @@ export async function saveSettings(payload: SettingsPayload) {
     return { ok: true as const }
   }
 
-  // If no row exists (rowCount === 0), attempt to insert via service‑role client.
+  // rowCount === 0 can mean either (a) no row exists yet, or (b) the row exists
+  // but wasn't returned by the SELECT-count under RLS. A plain INSERT breaks case
+  // (b) with a settings_pkey duplicate-key error, so upsert on `id` instead: it
+  // updates the existing row or inserts a new one. Service-role client bypasses RLS.
   if (rowCount === 0) {
     const { createAdminClient, isServiceRoleConfigured } = await import('@/lib/supabase/admin')
     if (!isServiceRoleConfigured) {
-      console.error('[saveSettings] Service‑role key not configured – cannot insert seed row')
+      console.error('[saveSettings] Service‑role key not configured – cannot upsert seed row')
       return { ok: false as const, error: 'Admin service not configured' }
     }
     const admin = createAdminClient()
-    const { error: insError } = await admin
+    const { error: upsertError } = await admin
       .from('settings')
-      .insert({ id: 1, ...payload, updated_at: now } as never)
-    if (insError) {
-      console.error('[saveSettings] insert error', insError)
-      return { ok: false as const, error: insError.message }
+      .upsert({ id: 1, ...payload, updated_at: now } as never, { onConflict: 'id' })
+    if (upsertError) {
+      console.error('[saveSettings] upsert error', upsertError)
+      return { ok: false as const, error: upsertError.message }
     }
     revalidatePath('/admin/settings')
     return { ok: true as const }
