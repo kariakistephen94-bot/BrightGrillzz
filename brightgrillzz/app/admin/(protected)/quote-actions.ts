@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { headers } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import { getSiteSettings } from '@/lib/settings.server'
 import { createPaystackLink } from '@/lib/paystack.server'
@@ -12,6 +13,22 @@ import { formatNaira } from '@/lib/format'
 
 function today(): string {
   return new Date().toISOString().slice(0, 10)
+}
+
+// Site origin for the Paystack callback: prefer the configured URL, otherwise
+// derive it from the incoming request so the redirect back works by default.
+async function siteBaseUrl(): Promise<string | undefined> {
+  const env = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
+  if (env) return env
+  try {
+    const h = await headers()
+    const host = h.get('host')
+    if (!host) return undefined
+    const proto = h.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https')
+    return `${proto}://${host}`
+  } catch {
+    return undefined
+  }
 }
 
 export interface QuoteLine {
@@ -208,7 +225,7 @@ export async function sendOrderQuote(dbId: string, note?: string) {
   const settings = await getSiteSettings()
   const bank = { bank: settings.bank, accountNumber: settings.accountNumber, accountName: settings.accountName }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
+  const baseUrl = await siteBaseUrl()
   const link = o.customer_email
     ? await createPaystackLink({
         email: o.customer_email,

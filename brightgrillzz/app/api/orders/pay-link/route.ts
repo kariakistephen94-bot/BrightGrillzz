@@ -49,12 +49,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: 'No email on file for online payment' }, { status: 409 })
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
+  // Derive the site origin from the request so the Paystack redirect back to
+  // /order/paid works out of the box, even without NEXT_PUBLIC_SITE_URL set.
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || new URL(request.url).origin
   const link = await createPaystackLink({
     email: o.customer_email,
     amountNaira: Number(o.total),
     reference: o.tracking_id,
-    callbackUrl: baseUrl ? `${baseUrl}/order/paid?tracking=${encodeURIComponent(o.tracking_id)}` : undefined,
+    callbackUrl: `${baseUrl}/order/paid?tracking=${encodeURIComponent(o.tracking_id)}`,
   })
   if (!link) {
     return NextResponse.json({ ok: false, error: 'Online payment unavailable right now' }, { status: 503 })
