@@ -123,9 +123,18 @@ export async function saveQuote(dbId: string, lines: { orderItemId: string; menu
     0,
   )
 
+  // Clear any previously generated pay link: the amount may have changed, so a
+  // fresh Paystack link must be created for the new total on the next send/pay.
   const { error } = await supabase
     .from('orders')
-    .update({ subtotal: total, total, status: 'quoted', quoted_at: now } as never)
+    .update({
+      subtotal: total,
+      total,
+      status: 'quoted',
+      quoted_at: now,
+      pay_url: null,
+      pay_reference: null,
+    } as never)
     .eq('id', dbId)
   if (error) return { ok: false as const, error: error.message }
 

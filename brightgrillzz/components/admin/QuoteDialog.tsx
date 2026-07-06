@@ -60,7 +60,7 @@ export function QuoteDialog({ dbId, onClose }: { dbId: string; onClose: () => vo
       setWhatsappUrl(res.whatsappUrl)
       setFeedback({
         ok: true,
-        text: res.emailed ? 'Quote emailed. Open WhatsApp to send it there too.' : 'Ready. Open WhatsApp to send the quote (no email on file).',
+        text: res.emailed ? 'Quote emailed. Tap Send on WhatsApp to deliver it there too.' : 'Ready. Tap Send on WhatsApp to deliver the quote (no email on file).',
       })
     } else {
       setFeedback({ ok: false, text: res.error })
@@ -119,8 +119,6 @@ export function QuoteDialog({ dbId, onClose }: { dbId: string; onClose: () => vo
               <span className="text-lg font-bold tabular-nums text-primary">{formatNaira(total)}</span>
             </div>
 
-            {feedback && <p className={cn('mt-3 text-sm', feedback.ok ? 'text-success' : 'text-destructive')}>{feedback.text}</p>}
-
             <button
               onClick={handleSave}
               disabled={saving || total <= 0}
@@ -130,8 +128,17 @@ export function QuoteDialog({ dbId, onClose }: { dbId: string; onClose: () => vo
               {saved ? 'Update quote' : 'Save quote'}
             </button>
 
+            {feedback && (
+              <p className={cn('mt-3 text-center text-sm', feedback.ok ? 'text-success' : 'text-destructive')}>
+                {feedback.text}
+              </p>
+            )}
+
             {saved && (
               <div className="mt-5 border-t border-border pt-4">
+                <p className="mb-2 text-sm font-semibold text-foreground">
+                  Send the quote to {draft.customerName.split(/\s+/)[0] || 'the customer'}
+                </p>
                 <label className="text-xs font-medium text-muted-foreground">Optional note to the customer</label>
                 <textarea
                   value={note}
@@ -140,29 +147,41 @@ export function QuoteDialog({ dbId, onClose }: { dbId: string; onClose: () => vo
                   placeholder="e.g. Price holds for today. Let us know to lock your date."
                   className="mt-1.5 w-full rounded-xl border border-border bg-background p-3 text-sm text-foreground focus:border-primary focus:outline-none"
                 />
-                <div className="mt-3 flex flex-wrap gap-3">
+
+                {!whatsappUrl ? (
                   <button
                     onClick={handleSend}
                     disabled={sending}
-                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-secondary px-5 text-sm font-semibold text-white disabled:opacity-60"
+                    className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-secondary text-sm font-semibold text-white disabled:opacity-60"
                   >
                     {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    Send quote (email)
+                    {sending ? 'Preparing...' : 'Prepare quote & pay link'}
                   </button>
-                  {whatsappUrl && (
+                ) : (
+                  <div className="mt-3 space-y-2">
                     <a
                       href={whatsappUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 text-sm font-semibold text-[#052e16]"
+                      className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#25D366] text-sm font-bold text-[#052e16]"
                     >
-                      <MessageCircle className="h-4 w-4" />
-                      Open WhatsApp
+                      <MessageCircle className="h-5 w-5" />
+                      Send on WhatsApp
                     </a>
-                  )}
-                </div>
+                    <button
+                      onClick={handleSend}
+                      disabled={sending}
+                      className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full border border-border bg-card text-sm font-semibold text-foreground disabled:opacity-60"
+                    >
+                      {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                      Regenerate (after edits)
+                    </button>
+                  </div>
+                )}
+
                 <p className="mt-2 text-center text-xs text-muted-foreground">
-                  Email includes a Paystack pay link (if configured) and your bank details.
+                  Generates a fresh Paystack pay link + your bank details
+                  {draft.email ? ', and emails the customer.' : ' (no email on file, send via WhatsApp).'}
                 </p>
               </div>
             )}
