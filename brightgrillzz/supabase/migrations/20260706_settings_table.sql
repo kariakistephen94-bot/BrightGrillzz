@@ -42,11 +42,19 @@ insert into settings (
 -- RLS: any authenticated staff/admin may read and update the row.
 alter table settings enable row level security;
 
+drop policy if exists "staff_read_settings" on settings;
 create policy "staff_read_settings"
   on settings for select
-  using (is_staff());
+  using (public.is_staff());
 
+drop policy if exists "staff_write_settings" on settings;
 create policy "staff_write_settings"
   on settings for update
-  using (is_staff())
-  with check (is_staff());
+  using (public.is_staff())
+  with check (public.is_staff());
+
+-- upsert needs an insert policy too (fires when the row is absent).
+drop policy if exists "staff_insert_settings" on settings;
+create policy "staff_insert_settings"
+  on settings for insert
+  with check (public.is_staff());

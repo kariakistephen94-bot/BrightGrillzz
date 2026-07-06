@@ -9,12 +9,17 @@ export type SettingsPayload = Omit<Settings, 'id' | 'updated_at'>
 export async function saveSettings(payload: SettingsPayload) {
   const supabase = await createClient()
 
+  // upsert so the row is created if the migration seed was skipped.
   const { error } = await supabase
     .from('settings')
-    .update({ ...payload, updated_at: new Date().toISOString() } as never)
-    .eq('id', 1)
+    .upsert({ id: 1, ...payload, updated_at: new Date().toISOString() } as never, {
+      onConflict: 'id',
+    })
 
-  if (error) return { ok: false as const, error: error.message }
+  if (error) {
+    console.error('[saveSettings]', error)
+    return { ok: false as const, error: error.message }
+  }
 
   revalidatePath('/admin/settings')
   return { ok: true as const }
