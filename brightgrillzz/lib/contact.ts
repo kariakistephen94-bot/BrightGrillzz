@@ -5,7 +5,7 @@ export const CONTACT = {
   phone: '+234 818 107 0919',
   phoneShort: '0818 107 0919',
   address: '5 Madiana Close, Wuse 2, Abuja, Nigeria',
-  email: 'info@brightgrillzz.com',
+  email: 'Brightgrillzzglobal@gmail.com',
   website: 'brightgrillzz.com',
   instagram: 'https://www.instagram.com/brightgrillzz/',
   facebook: 'https://web.facebook.com/Brightgrillzz',

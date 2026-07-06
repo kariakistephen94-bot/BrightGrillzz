@@ -30,13 +30,13 @@ insert into settings (
   'BrightGrillzz',
   'Premium BBQ',
   '0818 107 0919',
-  'info@brightgrillzz.com',
+  'Brightgrillzzglobal@gmail.com',
   '5 Madiana Close, Wuse 2, Abuja, Nigeria',
   'Open 24/7',
   'UBA',
   '1028930153',
   'Brightgrillzz Global Ltd',
-  'info@brightgrillzz.com'
+  'Brightgrillzzglobal@gmail.com'
 ) on conflict (id) do nothing;
 
 -- RLS: any authenticated staff/admin may read and update the row.
