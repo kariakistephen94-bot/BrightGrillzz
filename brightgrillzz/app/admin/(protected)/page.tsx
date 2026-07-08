@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { CalendarDays, TrendingUp } from 'lucide-react'
-import { formatNaira } from '@/lib/format'
+import { formatNaira, formatNairaCompact } from '@/lib/format'
 import { StatCard } from '@/components/admin/StatCard'
 import { StatusBadge } from '@/components/admin/ui'
 import { RevenueAreaChart, CategoryDonut } from '@/components/admin/charts'
@@ -46,9 +46,9 @@ export default async function AdminDashboardPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Revenue" value={formatNaira(overview.revenue_30d)} delta={overview.revenue_delta_pct} hint="vs. previous 30 days" />
+        <StatCard label="Total Revenue" value={formatNaira(overview.revenue_30d)} compactValue={formatNairaCompact(overview.revenue_30d)} delta={overview.revenue_delta_pct} hint="vs. previous 30 days" />
         <StatCard label="Orders" value={overview.orders_30d.toLocaleString()} delta={overview.orders_delta_pct} hint="vs. previous 30 days" />
-        <StatCard label="Avg. Order Value" value={formatNaira(overview.avg_order_value)} hint="last 30 days" />
+        <StatCard label="Avg. Order Value" value={formatNaira(overview.avg_order_value)} compactValue={formatNairaCompact(overview.avg_order_value)} hint="last 30 days" />
         <StatCard label="New Customers" value={overview.new_customers_30d.toLocaleString()} hint="last 30 days" />
       </div>
 
@@ -103,7 +103,10 @@ export default async function AdminDashboardPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
-                      <p className="shrink-0 text-sm font-semibold text-foreground">{formatNaira(item.revenue)}</p>
+                      <p className="shrink-0 text-sm font-semibold text-foreground">
+                        <span className="sm:hidden">{formatNairaCompact(item.revenue)}</span>
+                        <span className="hidden sm:inline">{formatNaira(item.revenue)}</span>
+                      </p>
                     </div>
                     <div className="mt-1.5 flex items-center gap-2">
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">

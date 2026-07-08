@@ -4,12 +4,15 @@ import { cn } from '@/lib/utils'
 export function StatCard({
   label,
   value,
+  compactValue,
   delta,
   trend,
   hint,
 }: {
   label: string
   value: string
+  /** Short form shown on mobile, e.g. "₦18k". Falls back to `value` when omitted. */
+  compactValue?: string
   delta?: number | null
   trend?: 'up' | 'down'
   hint: string
@@ -35,7 +38,16 @@ export function StatCard({
           </span>
         )}
       </div>
-      <p className="mt-3 text-3xl font-bold tracking-tight text-foreground">{value}</p>
+      <p className="mt-3 text-3xl font-bold tracking-tight text-foreground">
+        {compactValue ? (
+          <>
+            <span className="sm:hidden">{compactValue}</span>
+            <span className="hidden sm:inline">{value}</span>
+          </>
+        ) : (
+          value
+        )}
+      </p>
       <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
     </div>
   )
