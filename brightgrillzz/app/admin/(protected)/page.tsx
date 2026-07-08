@@ -11,10 +11,12 @@ import {
   getTopItems,
   getOrders,
 } from '@/lib/supabase/queries'
+import { requireAdmin } from '@/lib/admin/require-admin'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminDashboardPage() {
+  await requireAdmin()
   const [overview, revenueByWeek, salesByCategory, topItems, recentOrders] = await Promise.all([
     getOverview(),
     getRevenueByWeek(),

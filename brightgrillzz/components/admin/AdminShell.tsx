@@ -37,6 +37,7 @@ export function AdminShell({
       <Sidebar
         mobileOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}
+        role={user.role}
       />
 
       {/* Backdrop for mobile drawer */}
@@ -132,11 +133,19 @@ function UserMenu({ user, previewMode }: { user: AdminUser; previewMode: boolean
 function Sidebar({
   mobileOpen,
   onClose,
+  role,
 }: {
   mobileOpen: boolean
   onClose: () => void
+  role: AdminUser['role']
 }) {
   const pathname = usePathname()
+
+  // Staff don't see admin-only sections (dashboard, analytics, users, settings).
+  const sections = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => role === 'admin' || !item.adminOnly),
+  })).filter((section) => section.items.length > 0)
 
   return (
     <aside
@@ -170,7 +179,7 @@ function Sidebar({
 
       {/* Nav */}
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
-        {NAV_SECTIONS.map((section) => (
+        {sections.map((section) => (
           <div key={section.title}>
             <p className="px-3 pb-2 text-[0.68rem] font-semibold uppercase tracking-wider text-sidebar-muted/70">
               {section.title}

@@ -754,3 +754,90 @@ export async function getReservationStats(): Promise<ReservationStats> {
     cancelled: d.cancelled ?? 0,
   }
 }
+
+/* -------------------------------- users -------------------------------- */
+
+export type UserRole = 'customer' | 'staff' | 'admin'
+
+export interface AdminUserRow {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  joined: string
+  createdAt: string
+}
+
+type RawProfile = {
+  id: string
+  email: string | null
+  full_name: string | null
+  role: UserRole
+  created_at: string
+}
+
+const mapProfile = (p: RawProfile): AdminUserRow => ({
+  id: p.id,
+  name: p.full_name || (p.email ? p.email.split('@')[0] : 'User'),
+  email: p.email ?? '',
+  role: p.role,
+  joined: dayFmt.format(new Date(p.created_at)),
+  createdAt: p.created_at,
+})
+
+export interface UsersQuery {
+  page?: number
+  q?: string
+  role?: UserRole | 'all'
+}
+
+// Server-side paginated + filtered users (profiles). RLS lets staff/admin read.
+export async function getUsersPage(opts: UsersQuery = {}): Promise<Paged<AdminUserRow>> {
+  const supabase = await createClient()
+  const { from, to, page, pageSize } = paginate(opts.page, ADMIN_PAGE_SIZE)
+
+  let query = supabase
+    .from('profiles')
+    .select('id, email, full_name, role, created_at', { count: 'exact' })
+    .order('created_at', { ascending: false })
+
+  if (opts.role && opts.role !== 'all') query = query.eq('role', opts.role)
+
+  const q = sanitizeSearch(opts.q)
+  if (q) query = query.or(`email.ilike.%${q}%,full_name.ilike.%${q}%`)
+
+  const { data, error, count } = await query.range(from, to)
+  if (error || !data) return emptyPage<AdminUserRow>(page)
+  const total = count ?? 0
+  return {
+    rows: (data as unknown as RawProfile[]).map(mapProfile),
+    total,
+    page,
+    pageSize,
+    pageCount: pageCountOf(total, pageSize),
+  }
+}
+
+export interface UserStats {
+  total: number
+  admin: number
+  staff: number
+  customer: number
+}
+
+export async function getUserStats(): Promise<UserStats> {
+  const supabase = await createClient()
+  const countRole = async (role?: UserRole): Promise<number> => {
+    let q = supabase.from('profiles').select('id', { count: 'exact', head: true })
+    if (role) q = q.eq('role', role)
+    const { count } = await q
+    return count ?? 0
+  }
+  const [total, admin, staff, customer] = await Promise.all([
+    countRole(),
+    countRole('admin'),
+    countRole('staff'),
+    countRole('customer'),
+  ])
+  return { total, admin, staff, customer }
+}

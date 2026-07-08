@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/admin/ui'
 import { getSettings } from './actions'
 import { SettingsTabs } from './SettingsTabs'
 import type { Settings } from '@/lib/supabase/types'
+import { requireAdmin } from '@/lib/admin/require-admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +38,7 @@ const DEFAULTS: Omit<Settings, 'id' | 'updated_at'> = {
 }
 
 export default async function SettingsPage() {
+  await requireAdmin()
   const row = await getSettings()
   const settings = { ...DEFAULTS, ...(row ?? {}) }
 

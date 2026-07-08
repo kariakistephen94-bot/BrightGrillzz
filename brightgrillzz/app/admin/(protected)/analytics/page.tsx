@@ -10,6 +10,7 @@ import {
   AovLineChart,
 } from '@/components/admin/charts'
 import { getAnalytics, type AnalyticsRange } from '@/lib/supabase/queries'
+import { requireAdmin } from '@/lib/admin/require-admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,6 +38,7 @@ export default async function AnalyticsPage({
 }: {
   searchParams: Promise<{ range?: string }>
 }) {
+  await requireAdmin()
   const rangeParam = (await searchParams).range
   const range: AnalyticsRange = RANGES.some((r) => r.key === rangeParam)
     ? (rangeParam as AnalyticsRange)
