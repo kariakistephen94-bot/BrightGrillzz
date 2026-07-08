@@ -3,7 +3,7 @@ import { getOrdersPage, getOrderStats, type OrderStatus } from '@/lib/supabase/q
 
 export const dynamic = 'force-dynamic'
 
-const STATUSES: OrderStatus[] = ['pending', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled']
+const STATUSES: OrderStatus[] = ['awaiting_quote', 'quoted', 'pending', 'preparing', 'ready', 'out_for_delivery', 'completed', 'cancelled']
 
 function parseStatus(v: string | undefined): OrderStatus | 'all' {
   return v && (STATUSES as string[]).includes(v) ? (v as OrderStatus) : 'all'

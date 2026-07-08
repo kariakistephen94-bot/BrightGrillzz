@@ -9,7 +9,6 @@ import {
   MapPin,
   Phone,
   Tag,
-  Trash2,
   Truck,
   X,
 } from 'lucide-react'
@@ -17,7 +16,7 @@ import { cn } from '@/lib/utils'
 import { formatNaira } from '@/lib/format'
 import { PageHeader, Pill, StatusBadge, type OrderStatus } from '@/components/admin/ui'
 import type { AdminOrderRow, OrderStats, Paged } from '@/lib/supabase/queries'
-import { deleteOrder, setPaymentConfirmed, updateOrderStatus } from '@/app/admin/(protected)/actions'
+import { setPaymentConfirmed, updateOrderStatus } from '@/app/admin/(protected)/actions'
 import { Pagination } from './Pagination'
 import { CopyButton } from '@/components/ui/CopyButton'
 import { SearchInput } from './SearchInput'
@@ -51,9 +50,18 @@ export function OrdersView({
   q: string
   status: OrderStatus | 'all'
 }) {
-  const { setParams } = useListNav()
+  const { setParams, pending } = useListNav()
   const [orders, setOrders] = React.useState(data.rows)
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
+
+  // Optimistic active tab so the highlight moves the instant you click, without
+  // waiting for the server round-trip. Reconciled when the server status lands.
+  const [activeTab, setActiveTab] = React.useState<OrderStatus | 'all'>(status)
+  const [prevStatus, setPrevStatus] = React.useState(status)
+  if (status !== prevStatus) {
+    setPrevStatus(status)
+    setActiveTab(status)
+  }
 
   // Reconcile with fresh server data after a revalidation or page/filter change,
   // without dropping the open drawer (the drawer reads the order out of this same
@@ -97,14 +105,17 @@ export function OrdersView({
           {TABS.map((t) => (
             <button
               key={t.key}
-              onClick={() => setParams({ status: t.key === 'all' ? null : t.key })}
+              onClick={() => {
+                setActiveTab(t.key)
+                setParams({ status: t.key === 'all' ? null : t.key })
+              }}
               className={cn(
                 'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors',
-                status === t.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
+                activeTab === t.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {t.label}
-              <span className={cn('rounded-full px-1.5 text-[0.7rem] font-semibold', status === t.key ? 'bg-primary-foreground/20' : 'bg-muted')}>
+              <span className={cn('rounded-full px-1.5 text-[0.7rem] font-semibold', activeTab === t.key ? 'bg-primary-foreground/20' : 'bg-muted')}>
                 {tabCount(t.key)}
               </span>
             </button>
@@ -114,7 +125,12 @@ export function OrdersView({
         <SearchInput initial={q} placeholder="Search orders…" />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div
+        className={cn(
+          'overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-opacity',
+          pending && 'pointer-events-none opacity-60',
+        )}
+      >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[820px] text-sm">
             <thead>
@@ -339,15 +355,6 @@ function OrderDrawer({
     setBusy(null)
   }
 
-  const runDelete = async () => {
-    if (!order) return
-    setBusy('delete')
-    const id = order.dbId
-    onClose()
-    onRemove(id)
-    await deleteOrder(id)
-    setBusy(null)
-  }
 
   const pending = busy !== null
 
@@ -731,18 +738,6 @@ function OrderDrawer({
                   </div>
                 </div>
               )}
-              <button
-                disabled={pending}
-                onClick={() => {
-                  if (confirm(`Delete order #${order.id}? This cannot be undone.`)) {
-                    runDelete()
-                  }
-                }}
-                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-60"
-              >
-                {busy === 'delete' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                Delete order
-              </button>
             </div>
           </div>
         )}
