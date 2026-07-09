@@ -1,5 +1,4 @@
 import * as React from 'react'
-import { Bell, CreditCard, Palette, Store } from 'lucide-react'
 import { PageHeader } from '@/components/admin/ui'
 import { getSettings } from './actions'
 import { SettingsTabs } from './SettingsTabs'
@@ -7,16 +6,6 @@ import type { Settings } from '@/lib/supabase/types'
 import { requireAdmin } from '@/lib/admin/require-admin'
 
 export const dynamic = 'force-dynamic'
-
-const TABS = [
-  { key: 'business', label: 'Business', icon: Store },
-  { key: 'payments', label: 'Payments', icon: CreditCard },
-  { key: 'notifications', label: 'Notifications', icon: Bell },
-  { key: 'appearance', label: 'Appearance', icon: Palette },
-] as const
-
-export type TabKey = (typeof TABS)[number]['key']
-export { TABS }
 
 // Fallback defaults so the form is never empty if the DB row is missing.
 const DEFAULTS: Omit<Settings, 'id' | 'updated_at'> = {

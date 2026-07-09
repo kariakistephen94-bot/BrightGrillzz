@@ -5,7 +5,7 @@ import { CheckCircle2, Loader2, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { saveSettings } from './actions'
-import { TABS, type TabKey } from './page'
+import { TABS, type TabKey } from './tabs'
 import type { Settings } from '@/lib/supabase/types'
 
 // ---------------------------------------------------------------------------

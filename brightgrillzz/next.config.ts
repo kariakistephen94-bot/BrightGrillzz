@@ -12,6 +12,13 @@ const supabaseHostname = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  // Pin the workspace root to this folder. The parent directory is an old
+  // prototype that also has a package-lock.json, so Turbopack would otherwise
+  // infer it as the root and misclassify this App Router app as Pages Router
+  // (which breaks the `next/headers` import in lib/supabase/server.ts).
+  turbopack: {
+    root: import.meta.dirname,
+  },
   images: {
     // Allow menu photos served from Supabase Storage.
     remotePatterns: [
