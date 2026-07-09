@@ -235,7 +235,7 @@ export default function Home() {
             variants={heroItem}
             className="mx-auto mt-6 max-w-2xl text-base font-light leading-relaxed text-white/85 sm:text-lg md:text-xl"
           >
-            Feed the body that works the money as we add happiness to your happy life with delicious grills.
+            Abuja&rsquo;s home of luxury barbecue, open 24/7 and trusted by celebrities, tastemakers and food connoisseurs across the city. Multiple award-winning grill guru.
           </motion.p>
 
           <motion.div

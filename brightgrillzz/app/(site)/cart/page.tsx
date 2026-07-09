@@ -119,7 +119,7 @@ export default function CartPage() {
                     <p className="text-[9px] sm:text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       Open Hours
                     </p>
-                    <p className="font-bold text-xs sm:text-sm md:text-base">9am to 6pm, Mon to Sun</p>
+                    <p className="font-bold text-xs sm:text-sm md:text-base">Open 24/7</p>
                   </div>
                 </div>
               </div>

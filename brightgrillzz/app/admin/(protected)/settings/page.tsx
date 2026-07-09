@@ -14,7 +14,7 @@ const DEFAULTS: Omit<Settings, 'id' | 'updated_at'> = {
   phone: '0818 107 0919',
   email: 'Brightgrillzzglobal@gmail.com',
   address: '5 Madiana Close, Wuse 2, Abuja, Nigeria',
-  hours: 'Mon to Sun, 9am to 6pm',
+  hours: 'Open 24/7',
   bank: 'OPay',
   account_number: '8181070919',
   account_name: 'Adewale Bright',
