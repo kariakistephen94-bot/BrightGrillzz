@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Providers } from '@/components/providers'
+import { Analytics } from "@vercel/analytics/next"
 
 export const metadata: Metadata = {
   title: 'BrightGrillzz, Premium BBQ & Grilled Cuisine | Wuse 2, Abuja',
@@ -19,6 +20,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body className="font-body antialiased min-h-screen selection:bg-primary selection:text-primary-foreground">
         <Providers>{children}</Providers>
+        <Analytics />
       </body>
     </html>
   )
