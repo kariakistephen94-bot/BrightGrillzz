@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Flame, ArrowLeft, X, Play, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Flame, ArrowLeft, X, Play, ChevronLeft, ChevronRight, Loader2, LayoutGrid, ImageIcon, Film } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { CONTACT } from '@/lib/contact'
 import type { PublicMediaItem } from '@/lib/media-types'
@@ -28,10 +28,19 @@ const TILE_SPANS = [
   'col-span-1 row-span-1',
 ]
 
+type MediaFilter = 'all' | 'image' | 'video'
+
+const FILTERS: { key: MediaFilter; label: string; icon: typeof LayoutGrid }[] = [
+  { key: 'all', label: 'All', icon: LayoutGrid },
+  { key: 'image', label: 'Photos', icon: ImageIcon },
+  { key: 'video', label: 'Videos', icon: Film },
+]
+
 export default function GalleryPage() {
   // Gallery shows ONLY backend media (uploaded via the admin), server-paginated
-  // so we never load the whole library at once.
+  // and filterable by kind so we never load the whole library at once.
   const [page, setPage] = useState(1)
+  const [filter, setFilter] = useState<MediaFilter>('all')
   const [media, setMedia] = useState<PublicMediaItem[]>([])
   const [pageCount, setPageCount] = useState(0)
   const [total, setTotal] = useState(0)
@@ -45,7 +54,7 @@ export default function GalleryPage() {
     let active = true
     setLoading(true)
     setSelectedIndex(null)
-    fetch(`/api/media/gallery?page=${page}`)
+    fetch(`/api/media/gallery?page=${page}&kind=${filter}`)
       .then((r) => r.json())
       .then((j) => {
         if (!active) return
@@ -62,7 +71,15 @@ export default function GalleryPage() {
     return () => {
       active = false
     }
-  }, [page])
+  }, [page, filter])
+
+  // Switch the kind filter and jump back to the first page of the new subset.
+  const changeFilter = useCallback((next: MediaFilter) => {
+    setFilter((prev) => {
+      if (prev !== next) setPage(1)
+      return next
+    })
+  }, [])
 
   const close = useCallback(() => setSelectedIndex(null), [])
   const goPrev = useCallback(
@@ -115,12 +132,43 @@ export default function GalleryPage() {
       {/* Grid */}
       <section className="py-12 md:py-20 px-4">
         <div className="max-w-7xl mx-auto">
-          {total > 0 && (
-            <p className="mb-6 text-sm font-medium text-muted-foreground">
-              <span className="font-semibold text-foreground">{total.toLocaleString()}</span>{' '}
-              {total === 1 ? 'photo & film' : 'photos & films'}
-            </p>
-          )}
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            {/* Kind toggle: All / Photos / Videos (server-side filtered + paginated). */}
+            <div className="inline-flex rounded-full border border-border bg-card p-1 shadow-sm">
+              {FILTERS.map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  onClick={() => changeFilter(key)}
+                  aria-pressed={filter === key}
+                  className={`press inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                    filter === key
+                      ? 'bg-primary text-primary-foreground shadow'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {total > 0 && (
+              <p className="text-sm font-medium text-muted-foreground">
+                <span className="font-semibold text-foreground">{total.toLocaleString()}</span>{' '}
+                {filter === 'image'
+                  ? total === 1
+                    ? 'photo'
+                    : 'photos'
+                  : filter === 'video'
+                    ? total === 1
+                      ? 'film'
+                      : 'films'
+                    : total === 1
+                      ? 'photo & film'
+                      : 'photos & films'}
+              </p>
+            )}
+          </div>
 
           <div
             className={`grid grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-2 [grid-auto-flow:dense] auto-rows-[120px] sm:auto-rows-[150px] md:auto-rows-[180px] lg:auto-rows-[200px] transition-opacity ${loading ? 'opacity-50' : 'opacity-100'}`}
@@ -197,7 +245,13 @@ export default function GalleryPage() {
           )}
 
           {!loading && media.length === 0 && (
-            <p className="mt-8 text-center text-muted-foreground">No media yet. Check back soon.</p>
+            <p className="mt-8 text-center text-muted-foreground">
+              {filter === 'image'
+                ? 'No photos yet. Check back soon.'
+                : filter === 'video'
+                  ? 'No videos yet. Check back soon.'
+                  : 'No media yet. Check back soon.'}
+            </p>
           )}
 
           {/* Prev / next pager */}

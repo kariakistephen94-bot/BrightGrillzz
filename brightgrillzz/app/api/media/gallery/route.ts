@@ -27,20 +27,31 @@ function toItem(a: MediaAsset): PublicMediaItem {
   }
 }
 
+// Optional `?kind=` filter; anything other than image/video means "all".
+function parseKind(raw: string | null): 'all' | 'image' | 'video' {
+  return raw === 'image' || raw === 'video' ? raw : 'all'
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const page = Math.max(1, Math.floor(Number(searchParams.get('page')) || 1))
+  const kind = parseKind(searchParams.get('kind'))
   const from = (page - 1) * PAGE_SIZE
   const to = from + PAGE_SIZE - 1
 
-  const empty = { items: [], page: 1, pageCount: 0, total: 0, pageSize: PAGE_SIZE }
+  const empty = { items: [], page: 1, pageCount: 0, total: 0, pageSize: PAGE_SIZE, kind }
   if (!isServiceRoleConfigured) return NextResponse.json(empty)
 
   const admin = createAdminClient()
-  const { data, count, error } = await admin
+  let query = admin
     .from('media_assets')
     .select('*', { count: 'exact' })
     .eq('is_published', true)
+
+  // Filter to a single media kind so pagination counts/pages only that subset.
+  if (kind !== 'all') query = query.eq('kind', kind)
+
+  const { data, count, error } = await query
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false })
     .range(from, to)
@@ -54,5 +65,6 @@ export async function GET(req: Request) {
     pageCount: total > 0 ? Math.ceil(total / PAGE_SIZE) : 0,
     total,
     pageSize: PAGE_SIZE,
+    kind,
   })
 }

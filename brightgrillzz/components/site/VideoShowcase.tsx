@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Flame, ChevronLeft, ChevronRight, Volume2, VolumeX, Play, Pause } from 'lucide-react'
 import { Reveal } from '@/components/ui/Reveal'
@@ -23,6 +23,16 @@ export function VideoShowcase({ videos }: { videos: PublicMediaItem[] }) {
   const safeActive = active < count ? active : 0
   const current = videos[safeActive]
 
+  // React doesn't reliably reflect the `muted` prop onto the underlying <video>
+  // element, so we set it imperatively whenever the preference — or the active
+  // clip (which remounts the element) — changes. Without this the unmute button
+  // appears to do nothing. Declared before the early return so the hook order
+  // stays stable while the video list loads in.
+  useEffect(() => {
+    const v = videoRef.current
+    if (v) v.muted = muted
+  }, [muted, safeActive])
+
   if (count === 0) return null
 
   const go = (dir: number) => setActive((i) => (i + dir + count) % count)
@@ -30,7 +40,9 @@ export function VideoShowcase({ videos }: { videos: PublicMediaItem[] }) {
   const togglePlay = () => {
     const v = videoRef.current
     if (!v) return
-    if (v.paused) v.play()
+    // play() rejects when the browser blocks playback (e.g. unmuted autoplay);
+    // swallow it so we don't throw an unhandled rejection.
+    if (v.paused) v.play().catch(() => {})
     else v.pause()
   }
 
@@ -55,7 +67,7 @@ export function VideoShowcase({ videos }: { videos: PublicMediaItem[] }) {
 
         <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-12">
           {/* Stage */}
-          <div className="flex justify-center lg:order-2">
+          <div className="flex min-w-0 justify-center lg:order-2">
             <div className="relative w-full max-w-[300px] sm:max-w-[340px]">
               <div className="relative aspect-[9/16] overflow-hidden rounded-[2rem] bg-black shadow-2xl shadow-navy-dark/30 ring-1 ring-black/5">
                 <AnimatePresence mode="wait">
@@ -169,8 +181,8 @@ export function VideoShowcase({ videos }: { videos: PublicMediaItem[] }) {
 
           {/* Thumbnail rail */}
           {count > 1 && (
-            <div className="lg:order-1">
-              <div className="flex gap-3 overflow-x-auto pb-2 lg:flex-col lg:gap-3 lg:overflow-visible">
+            <div className="min-w-0 lg:order-1">
+              <div className="flex gap-3 overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch] lg:flex-col lg:gap-3 lg:overflow-visible">
                 {videos.map((v, i) => (
                   <button
                     key={v.id}
@@ -179,12 +191,16 @@ export function VideoShowcase({ videos }: { videos: PublicMediaItem[] }) {
                       i === safeActive ? 'ring-secondary' : 'ring-navy-dark/10 hover:ring-navy-dark/30'
                     }`}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={v.posterUrl ?? v.url}
-                      alt={v.title ?? 'Video thumbnail'}
-                      className="h-full w-full object-cover lg:absolute lg:inset-0"
-                    />
+                    {v.posterUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={v.posterUrl}
+                        alt={displayMediaTitle(v.title) ?? 'Video thumbnail'}
+                        className="h-full w-full object-cover lg:absolute lg:inset-0"
+                      />
+                    ) : (
+                      <span className="absolute inset-0 bg-gradient-to-br from-navy-dark to-navy-dark/70" />
+                    )}
                     <span className="absolute inset-0 grid place-items-center bg-black/25">
                       <Play className="h-5 w-5 fill-white text-white opacity-80" />
                     </span>
