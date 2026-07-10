@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { motion, type Variants } from 'framer-motion'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import {
   Flame,
   Star,
@@ -16,12 +16,16 @@ import {
   Users,
   Send,
   Fish,
+  X,
 } from 'lucide-react'
 import { Reveal, RevealGroup, RevealItem } from '@/components/ui/Reveal'
 import { Aurora } from '@/components/ui/Aurora'
+import { SkeletonImage } from '@/components/ui/SkeletonImage'
 import { ReservationForm } from '@/components/site/ReservationForm'
+import { VideoShowcase } from '@/components/site/VideoShowcase'
 import { CONTACT, HERO_IMAGE } from '@/lib/contact'
 import { useSiteSettings } from '@/context/settings-context'
+import { useMedia } from '@/hooks/useMedia'
 
 // ---------------------------------------------------------------------------
 // Landing content for Bright Grillzz. Original copy for a by-reservation,
@@ -73,13 +77,35 @@ const SIGNATURES = [
   { title: 'Sharing Platters', image: '/gallery/image5.jpeg' },
 ]
 
-// Five curated shots for the guest-list showcase (from /public/gallery).
+// Curated fallback shots for the guest-list showcase (from /public/gallery),
+// used only when no media has been uploaded yet.
 const SHOWCASE_IMAGES = [
-  '/gallery/image6.jpg',
+  '/gallery/image10.jpeg',
+  '/gallery/image1.jpeg',
+  '/gallery/image3.jpg',
+  '/gallery/image41.jpg',
+  '/gallery/image8.jpeg',
+  '/gallery/image91.jpg',
+  '/gallery/image2.jpeg',
+  '/gallery/image5.jpeg',
+  '/gallery/image6.jpeg',
   '/gallery/image7.jpg',
-  '/gallery/image8.jpg',
-  '/gallery/image9.jpg',
-  '/gallery/image10.jpg',
+]
+
+// Puzzle-mosaic tile sizes for the showcase, matching the gallery grid. With
+// `grid-auto-flow: dense` the pieces interlock like a jigsaw. Spans stay <= 2 so
+// the pattern works on 2-col mobile and 4-col desktop alike.
+const SHOWCASE_SPANS = [
+  'col-span-2 row-span-2', // large feature
+  'col-span-1 row-span-1',
+  'col-span-1 row-span-1',
+  'col-span-1 row-span-2', // tall
+  'col-span-1 row-span-1',
+  'col-span-1 row-span-1',
+  'col-span-2 row-span-1', // wide
+  'col-span-1 row-span-2', // tall
+  'col-span-1 row-span-1',
+  'col-span-1 row-span-1',
 ]
 
 const heroContainer: Variants = {
@@ -180,6 +206,22 @@ function GuestVoices() {
 
 export default function Home() {
   const settings = useSiteSettings()
+  const { videos } = useMedia()
+  const [lightbox, setLightbox] = useState<string | null>(null)
+
+  // Close the showcase lightbox on Escape for keyboard users.
+  useEffect(() => {
+    if (!lightbox) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setLightbox(null)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [lightbox])
+
+  // The guest-list showcase is controlled entirely by SHOWCASE_IMAGES above:
+  // it renders those photos in exactly that order across the puzzle mosaic
+  // (image at index 0 fills the big tile — see SHOWCASE_SPANS). Reorder the
+  // array to rearrange the mosaic.
+  const showcase = SHOWCASE_IMAGES.map((url) => ({ id: url, url }))
 
   return (
     <div className="overflow-hidden">
@@ -435,6 +477,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ===================== VIDEO REEL ===================== */}
+      <VideoShowcase videos={videos} />
+
       {/* ===================== SIGNATURE SHOWCASE ===================== */}
       <section className="px-4 py-16 md:py-20">
         <div className="mx-auto max-w-7xl">
@@ -475,21 +520,42 @@ export default function Home() {
             </h2>
           </Reveal>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-5">
-            {SHOWCASE_IMAGES.map((src, i) => (
-              <Reveal key={src} delay={(i % 5) * 0.05}>
-                <div className="lift group relative aspect-[4/5] overflow-hidden rounded-2xl shadow-premium-sm">
-                  <Image
-                    src={src}
+          <RevealGroup
+            className="grid grid-cols-2 gap-1.5 sm:gap-2 md:grid-cols-4 [grid-auto-flow:dense] auto-rows-[120px] sm:auto-rows-[150px] md:auto-rows-[180px] lg:auto-rows-[200px]"
+            stagger={0.06}
+          >
+            {showcase.map((item, i) => (
+              <RevealItem
+                key={item.id}
+                className={`${SHOWCASE_SPANS[i % SHOWCASE_SPANS.length]} group relative overflow-hidden ring-1 ring-black/5 shadow-sm transition-all hover:z-10 hover:shadow-premium`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setLightbox(item.url)}
+                  aria-label="View photo full screen"
+                  className="absolute inset-0 cursor-pointer"
+                >
+                  <SkeletonImage
+                    src={item.url}
                     alt="Bright Grillzz showcase, a past event presentation"
                     fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                    sizes="(max-width: 768px) 50vw, 25vw"
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-navy-dark/0 transition-colors duration-500 group-hover:bg-navy-dark/20" />
-                </div>
-              </Reveal>
+                  <div className="absolute inset-0 z-[2] bg-navy-dark/0 transition-colors duration-500 group-hover:bg-navy-dark/20" />
+                </button>
+              </RevealItem>
             ))}
+          </RevealGroup>
+
+          <div className="mt-10 flex justify-center">
+            <Link
+              href="/gallery"
+              className="press inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-br from-primary to-navy-dark px-7 text-sm font-bold text-white shadow-premium-sm"
+            >
+              View all gallery
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
 
           <p className="mx-auto mt-8 max-w-2xl text-center text-xs leading-relaxed text-muted-foreground">
@@ -498,6 +564,43 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      {/* ===================== SHOWCASE LIGHTBOX ===================== */}
+      <AnimatePresence>
+        {lightbox && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-900/60 p-4 backdrop-blur-xl md:p-8"
+            onClick={() => setLightbox(null)}
+          >
+            <button
+              onClick={() => setLightbox(null)}
+              className="absolute right-6 top-6 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30"
+              aria-label="Close"
+            >
+              <X className="h-6 w-6" />
+            </button>
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              className="relative flex h-full w-full max-w-6xl items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Image
+                src={lightbox}
+                alt="Bright Grillzz showcase, full view"
+                fill
+                sizes="100vw"
+                className="object-contain"
+                priority
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ===================== GUEST VOICES ===================== */}
       <GuestVoices />

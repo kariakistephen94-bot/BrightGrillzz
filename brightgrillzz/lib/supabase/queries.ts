@@ -1,7 +1,58 @@
 import { createClient } from './server'
+import type { MediaAsset } from './types'
 
 // Server-side data access for the admin dashboard. These run under the
 // signed-in admin's session, so RLS (is_staff) governs what they can read.
+
+/** Every media asset (published + drafts) for the admin Media manager. */
+export async function getAllMediaAssets(): Promise<MediaAsset[]> {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('media_assets')
+    .select('*')
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false })
+  return (data as MediaAsset[] | null) ?? []
+}
+
+/** One page of media assets (published + drafts) for the admin Media manager. */
+export async function getMediaAssetsPage(opts: { page?: number } = {}): Promise<Paged<MediaAsset>> {
+  const supabase = await createClient()
+  const { from, to, page, pageSize } = paginate(opts.page, ADMIN_PAGE_SIZE)
+  const { data, error, count } = await supabase
+    .from('media_assets')
+    .select('*', { count: 'exact' })
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false })
+    .range(from, to)
+  if (error || !data) return emptyPage<MediaAsset>(page)
+  const total = count ?? 0
+  return {
+    rows: data as MediaAsset[],
+    total,
+    page,
+    pageSize,
+    pageCount: pageCountOf(total, pageSize),
+  }
+}
+
+export interface MediaCounts {
+  images: number
+  videos: number
+  total: number
+}
+
+/** Whole-library media counts (all statuses), independent of the current page. */
+export async function getMediaCounts(): Promise<MediaCounts> {
+  const supabase = await createClient()
+  const [imagesRes, videosRes] = await Promise.all([
+    supabase.from('media_assets').select('id', { count: 'exact', head: true }).eq('kind', 'image'),
+    supabase.from('media_assets').select('id', { count: 'exact', head: true }).eq('kind', 'video'),
+  ])
+  const images = imagesRes.count ?? 0
+  const videos = videosRes.count ?? 0
+  return { images, videos, total: images + videos }
+}
 
 export type OrderStatus =
   | 'awaiting_quote'

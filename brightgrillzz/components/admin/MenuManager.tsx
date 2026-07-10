@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Check, ImagePlus, Loader2, Pencil, Plus, Search, Star, Trash2, Utensils, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatNaira } from '@/lib/format'
+import { isCloudinaryConfigured, uploadToCloudinary } from '@/lib/cloudinary'
 import { PageHeader } from '@/components/admin/ui'
 import type { AdminMenuItem, MenuFacets, Paged } from '@/lib/supabase/queries'
 import {
@@ -265,12 +266,12 @@ function MenuItemModal({
     startTransition(async () => {
       try {
         if (file && file.size > 0) {
-          const up = new FormData()
-          up.append('file', file)
-          const r = await fetch('/api/admin/menu-image', { method: 'POST', body: up })
-          const j = await r.json()
-          if (!r.ok || !j.url) throw new Error(j.error || 'Image upload failed')
-          fd.set('image_url', j.url)
+          if (!file.type.startsWith('image/')) throw new Error('Please choose an image')
+          if (!isCloudinaryConfigured) throw new Error('Image uploads are not configured (Cloudinary)')
+          // Menu photos now go to Cloudinary. Existing Supabase image URLs are
+          // left untouched and keep rendering.
+          const uploaded = await uploadToCloudinary(file)
+          fd.set('image_url', uploaded.url)
         }
         const res = editing ? await updateMenuItem(editing.id, fd) : await createMenuItem(fd)
         if (res?.ok) onClose()

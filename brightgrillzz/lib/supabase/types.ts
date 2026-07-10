@@ -127,6 +127,27 @@ export interface Settings {
   updated_at: string
 }
 
+export interface MediaAsset {
+  id: string
+  kind: 'image' | 'video'
+  url: string
+  public_id: string | null
+  poster_url: string | null
+  title: string | null
+  caption: string | null
+  featured: boolean
+  is_published: boolean
+  available_for_request: boolean
+  width: number | null
+  height: number | null
+  duration: number | null
+  format: string | null
+  bytes: number | null
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
 type Row<T> = T
 type Insert<T> = Partial<T>
 type Update<T> = Partial<T>
@@ -149,6 +170,7 @@ export interface Database {
       reviews: TableShape<Review>
       contact_messages: TableShape<ContactMessage>
       settings: TableShape<Settings>
+      media_assets: TableShape<MediaAsset>
     }
     Views: {
       [key: string]: { Row: Record<string, unknown> }

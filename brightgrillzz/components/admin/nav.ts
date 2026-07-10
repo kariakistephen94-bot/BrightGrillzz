@@ -8,6 +8,7 @@ import {
   BarChart3,
   Star,
   Settings,
+  Film,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -28,6 +29,7 @@ export const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
       { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
       { label: 'Reservations', href: '/admin/reservations', icon: CalendarClock },
       { label: 'Menu', href: '/admin/menu', icon: UtensilsCrossed },
+      { label: 'Media', href: '/admin/media', icon: Film },
     ],
   },
   {

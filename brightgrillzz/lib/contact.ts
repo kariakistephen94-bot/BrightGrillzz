@@ -184,16 +184,16 @@ export const FULL_MENU: MenuItem[] = [
 
 // Gallery (view-only grill photography from public/gallery)
 export const GALLERY_ITEMS = [
-  { id: 1, image: '/gallery/image1.jpg' },
+  { id: 1, image: '/gallery/image1.jpeg' },
   { id: 2, image: '/gallery/image2.jpeg' },
   { id: 3, image: '/gallery/image3.jpg' },
   { id: 4, image: '/gallery/image4.jpg' },
   { id: 5, image: '/gallery/image5.jpeg' },
-  { id: 6, image: '/gallery/image6.jpg' },
+  { id: 6, image: '/gallery/image6.jpeg' },
   { id: 7, image: '/gallery/image7.jpg' },
-  { id: 8, image: '/gallery/image8.jpg' },
+  { id: 8, image: '/gallery/image8.jpeg' },
   { id: 9, image: '/gallery/image9.jpg' },
-  { id: 10, image: '/gallery/image10.jpg' },
+  { id: 10, image: '/gallery/image10.jpeg' },
   { id: 11, image: '/gallery/image11.jpeg' },
   { id: 12, image: '/gallery/image12.jpg' },
   { id: 13, image: '/gallery/image13.jpg' },
