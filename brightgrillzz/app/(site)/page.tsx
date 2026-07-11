@@ -73,7 +73,7 @@ const EXPERIENCES = [
 const SIGNATURES = [
   { title: 'Seafood Towers', image: '/gallery/image2.jpeg' },
   { title: 'Prime Cuts', image: '/gallery/image3.jpg' },
-  { title: 'Whole Grilled Fish', image: '/gallery/image4.jpg' },
+  { title: 'Whole Grilled Fish', image: '/gallery/image13.jpg' },
   { title: 'Sharing Platters', image: '/gallery/image5.jpeg' },
 ]
 
