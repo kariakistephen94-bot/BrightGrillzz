@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageHeader } from '@/components/admin/ui'
+import { CopyLinkButton } from '@/components/admin/CopyLinkButton'
 import type { AdminReservationRow, Paged, ReservationStats, ReservationStatus } from '@/lib/supabase/queries'
 import {
   deleteReservation,
@@ -70,7 +71,9 @@ export function ReservationsView({
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Reservations" description="Grill experience enquiries from the storefront." />
+      <PageHeader title="Reservations" description="Grill experience enquiries from the storefront.">
+        <CopyLinkButton path="/reservation" label="Copy reservation link" />
+      </PageHeader>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard label="Total" value={stats.total} />
