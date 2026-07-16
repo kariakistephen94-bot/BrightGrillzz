@@ -35,7 +35,8 @@ select
   coalesce(lower(trim(max(customer_email))), '')          as email,
   (array_agg(customer_phone order by created_at desc))[1] as phone,
   count(*)                                                as orders,
-  coalesce(sum(total), 0)                                 as spent,
+  -- Cancelled orders don't add to what a customer has actually spent.
+  coalesce(sum(total) filter (where status <> 'cancelled'), 0) as spent,
   max(created_at)                                         as last_order_at
 from public.orders
 group by 1;

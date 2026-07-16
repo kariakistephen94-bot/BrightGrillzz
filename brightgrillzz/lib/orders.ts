@@ -86,3 +86,54 @@ export function getOrderByTrackingId(trackingId: string): Order | null {
   const normalized = trackingId.trim().toUpperCase()
   return getOrders().find((o) => o.trackingId.toUpperCase() === normalized) ?? null
 }
+
+/**
+ * Builds an Order from the `order` payload returned by /api/orders/paystack-confirm
+ * so the Paystack callback page can render a receipt without relying on
+ * localStorage (which is missing when the customer paid on another device).
+ * `fallback` (a matching local order, if any) fills in anything the API omits.
+ */
+export function orderFromApiReceipt(raw: unknown, fallback?: Order | null): Order | null {
+  if (!raw || typeof raw !== 'object') return fallback ?? null
+  const o = raw as Record<string, unknown>
+  const trackingId = String(o.trackingId ?? '').trim()
+  if (!trackingId) return fallback ?? null
+
+  const customer = (o.customer ?? {}) as Record<string, unknown>
+  const fulfillment = (o.fulfillment ?? {}) as Record<string, unknown>
+  const rawItems = Array.isArray(o.items) ? (o.items as Record<string, unknown>[]) : []
+
+  const items: CartItem[] = rawItems.map((it, i) => {
+    const id = String(it.id ?? `${trackingId}-${i}`)
+    return {
+      id,
+      cartId: id,
+      name: String(it.name ?? ''),
+      qty: Number(it.qty) || 0,
+      image: String(it.image ?? ''),
+      price: Number(it.price) || 0,
+    }
+  })
+
+  return {
+    trackingId,
+    createdAt: String(o.createdAt ?? fallback?.createdAt ?? new Date().toISOString()),
+    customer: {
+      fullName: String(customer.fullName ?? '').trim() || fallback?.customer.fullName || '',
+      phone: String(customer.phone ?? '').trim() || fallback?.customer.phone || '',
+      email: String(customer.email ?? '').trim() || fallback?.customer.email || '',
+    },
+    fulfillment: {
+      type: fulfillment.type === 'pickup' ? 'pickup' : 'delivery',
+      address: String(fulfillment.address ?? '').trim() || fallback?.fulfillment.address || '',
+      area: String(fulfillment.area ?? '').trim() || fallback?.fulfillment.area || '',
+      notes: fallback?.fulfillment.notes ?? '',
+    },
+    items: items.length > 0 ? items : fallback?.items ?? [],
+    subtotal: Number(o.subtotal) || fallback?.subtotal || 0,
+    total: Number(o.total) || fallback?.total || 0,
+    paymentMethod: 'paystack',
+    paymentReference: String(o.paymentReference ?? '').trim() || fallback?.paymentReference,
+    paymentConfirmed: Boolean(o.paymentConfirmed),
+  }
+}

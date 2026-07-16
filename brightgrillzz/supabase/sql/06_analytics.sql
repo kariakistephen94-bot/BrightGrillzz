@@ -10,7 +10,8 @@ with (security_invoker = on) as
 select
   date_trunc('week', created_at)::date as week_start,
   count(*)                              as orders,
-  coalesce(sum(total), 0)              as revenue
+  -- Cancelled orders bring in no money, so they never count toward revenue.
+  coalesce(sum(total) filter (where status <> 'cancelled'), 0) as revenue
 from public.orders
 where created_at >= date_trunc('week', now()) - interval '11 weeks'
 group by 1
@@ -35,6 +36,8 @@ select
   count(*)                            as items_sold,
   coalesce(sum(oi.line_total), 0)     as revenue
 from public.order_items oi
+-- Exclude items belonging to cancelled orders — nothing was actually sold.
+join public.orders o on o.id = oi.order_id and o.status <> 'cancelled'
 left join public.menu_items mi on mi.id = oi.menu_item_id
 group by 1
 order by revenue desc;
@@ -47,6 +50,8 @@ select
   sum(oi.qty)         as orders,
   sum(oi.line_total)  as revenue
 from public.order_items oi
+-- Cancelled orders don't count toward best-sellers or their revenue.
+join public.orders o on o.id = oi.order_id and o.status <> 'cancelled'
 group by oi.name
 order by orders desc
 limit 10;
@@ -67,13 +72,16 @@ stable
 set search_path = public
 as $$
   with cur as (
-    select coalesce(sum(total), 0) as revenue, count(*) as orders,
+    -- Revenue never counts cancelled orders (no money changed hands).
+    select coalesce(sum(total) filter (where status <> 'cancelled'), 0) as revenue,
+           count(*) as orders,
            count(distinct customer_email) as customers
     from public.orders
     where created_at >= now() - interval '30 days'
   ),
   prev as (
-    select coalesce(sum(total), 0) as revenue, count(*) as orders
+    select coalesce(sum(total) filter (where status <> 'cancelled'), 0) as revenue,
+           count(*) as orders
     from public.orders
     where created_at >= now() - interval '60 days'
       and created_at <  now() - interval '30 days'

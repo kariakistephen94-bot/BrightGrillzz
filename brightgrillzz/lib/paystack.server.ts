@@ -60,8 +60,23 @@ export async function createPaystackLink(input: PaystackLinkInput): Promise<Pays
   }
 }
 
-/** Confirms a reference is a successful payment. Returns the paid amount (kobo). */
-export async function verifyPaystackReference(reference: string): Promise<{ success: boolean; amountKobo: number } | null> {
+export interface PaystackVerification {
+  /** True only when the transaction fully succeeded. */
+  success: boolean
+  /**
+   * The raw Paystack gateway status: 'success' | 'failed' | 'abandoned' |
+   * 'ongoing' | 'reversed' … Lets callers tell a genuine decline apart from a
+   * transient/unknown state.
+   */
+  gatewayStatus: string
+  amountKobo: number
+}
+
+/**
+ * Confirms a reference with Paystack. Returns the gateway status + paid amount,
+ * or null when we could not check at all (no valid sk_* key, network error).
+ */
+export async function verifyPaystackReference(reference: string): Promise<PaystackVerification | null> {
   const secret = process.env.PAYSTACK_SECRET_KEY
   if (!secret || !secret.startsWith('sk_') || !reference) return null
   try {
@@ -72,7 +87,8 @@ export async function verifyPaystackReference(reference: string): Promise<{ succ
     if (!res.ok) return null
     const payload = (await res.json()) as { status?: boolean; data?: { status?: string; amount?: number } }
     if (!payload.status || !payload.data) return null
-    return { success: payload.data.status === 'success', amountKobo: payload.data.amount ?? 0 }
+    const gatewayStatus = payload.data.status ?? 'unknown'
+    return { success: gatewayStatus === 'success', gatewayStatus, amountKobo: payload.data.amount ?? 0 }
   } catch (err) {
     console.error('[paystack] verify threw:', err)
     return null
