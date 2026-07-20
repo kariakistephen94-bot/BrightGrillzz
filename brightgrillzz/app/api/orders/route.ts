@@ -65,7 +65,10 @@ async function insertOrder(order: Omit<OrderEmailPayload, 'items'> & { items: In
     total: isRequest ? null : order.total ?? null,
     payment_method: isRequest ? null : order.paymentMethod ?? 'bank_transfer',
     payment_reference: order.paymentReference || null,
-    payment_confirmed: !isRequest && order.paymentMethod === 'paystack',
+    // New orders are always unpaid at creation. Bank transfers are confirmed by
+    // admin; Paystack orders are confirmed by /api/orders/paystack-confirm after
+    // the customer pays on the hosted checkout the server initialises for them.
+    payment_confirmed: false,
   }
 
   const { data, error } = await admin

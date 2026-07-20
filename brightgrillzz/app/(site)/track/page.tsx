@@ -386,6 +386,28 @@ function TrackContent() {
                 </div>
               )}
 
+              {status === 'pending' && paymentMethod === 'paystack' && !paymentConfirmed && total > 0 && (
+                <div className="mb-8 rounded-2xl border border-primary/20 bg-primary/5 p-5">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Tag className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-bold">Finish your payment</h3>
+                  </div>
+                  <div className="mb-4 flex items-center justify-between border-t border-border pt-3">
+                    <span className="font-bold">Total</span>
+                    <span className="font-headline text-xl font-bold text-primary">{formatNaira(total)}</span>
+                  </div>
+                  <Button
+                    onClick={() => payOnline(trackingId)}
+                    disabled={payingOnline}
+                    className="h-12 w-full rounded-full font-bold"
+                  >
+                    {payingOnline ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Pay {formatNaira(total)} online
+                  </Button>
+                  {payError && <p className="mt-2 text-center text-xs text-destructive">{payError}</p>}
+                </div>
+              )}
+
               {isCancelled ? (
                 <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-6 text-center">
                   <XCircle className="w-12 h-12 mx-auto mb-3 text-red-500" />

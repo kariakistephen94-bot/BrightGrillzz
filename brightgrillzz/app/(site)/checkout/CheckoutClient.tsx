@@ -20,11 +20,11 @@ import {
   type FulfillmentType,
   type PaymentMethod,
 } from '@/lib/orders'
-import { payWithPaystack, verifyPaystackPayment } from '@/lib/paystack'
 import { useSiteSettings } from '@/context/settings-context'
 
-// 'paying' = Paystack popup open, 'saving' = persisting the order + redirecting.
-type CheckoutPhase = 'idle' | 'paying' | 'saving'
+// 'saving'      = persisting a bank-transfer order + redirecting to confirmation.
+// 'redirecting' = order saved, handing off to the Paystack hosted checkout.
+type CheckoutPhase = 'idle' | 'saving' | 'redirecting'
 
 export default function CheckoutClient() {
   const router = useRouter()
@@ -83,9 +83,10 @@ export default function CheckoutClient() {
     return Object.keys(next).length === 0
   }
 
-  const finalizeOrder = (payment: { paymentMethod: PaymentMethod; paymentReference?: string }) => {
+  // Builds the shared order payload (customer, fulfillment, priced items).
+  const buildOrder = (paymentMethod: PaymentMethod) => {
     const trackingId = generateTrackingId()
-    const order = {
+    return {
       trackingId,
       createdAt: new Date().toISOString(),
       customer: { fullName: fullName.trim(), phone: phone.trim(), email: email.trim() },
@@ -98,40 +99,28 @@ export default function CheckoutClient() {
       items: [...items],
       subtotal,
       total,
-      paymentConfirmed: true,
-      ...payment,
+      paymentMethod,
+      paymentConfirmed: false,
     }
-    saveOrder(order)
-
-    // Persist the order to the database and fire confirmation + restaurant
-    // alert emails. keepalive lets the request finish even though we navigate
-    // away immediately; failures never block the order (it's also mirrored to
-    // localStorage above).
-    fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      keepalive: true,
-      body: JSON.stringify({
-        trackingId: order.trackingId,
-        createdAt: order.createdAt,
-        customer: order.customer,
-        fulfillment: order.fulfillment,
-        items: order.items.map((i) => ({ id: i.id, name: i.name, qty: i.qty, price: i.price ?? 0, image: i.image })),
-        subtotal: order.subtotal,
-        total: order.total,
-        paymentMethod: order.paymentMethod,
-        paymentReference: order.paymentReference,
-      }),
-    }).catch(() => {})
-
-    clearCart()
-    router.push(`/order/confirmation?tracking=${encodeURIComponent(trackingId)}`)
   }
+
+  // Serialises an order for POST /api/orders (priced items carry their menu id
+  // so the row links back to the menu item).
+  const orderBody = (order: ReturnType<typeof buildOrder>) => ({
+    trackingId: order.trackingId,
+    createdAt: order.createdAt,
+    customer: order.customer,
+    fulfillment: order.fulfillment,
+    items: order.items.map((i) => ({ id: i.id, name: i.name, qty: i.qty, price: i.price ?? 0, image: i.image })),
+    subtotal: order.subtotal,
+    total: order.total,
+    paymentMethod: order.paymentMethod,
+  })
 
   const failPayment = (message: string) => {
     setPhase('idle')
     setErrors((prev) => ({ ...prev, payment: message }))
-    toast({ title: 'Payment not completed', description: message, variant: 'destructive' })
+    toast({ title: 'Payment not started', description: message, variant: 'destructive' })
   }
 
   const handlePlaceOrder = async () => {
@@ -139,41 +128,54 @@ export default function CheckoutClient() {
 
     if (effectiveMethod === 'bank_transfer') {
       setPhase('saving')
-      finalizeOrder({ paymentMethod: 'bank_transfer' })
+      const order = buildOrder('bank_transfer')
+      saveOrder(order)
+      // keepalive lets the write finish even as we navigate away; a failure
+      // never blocks the customer (the order is mirrored to localStorage above).
+      fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify(orderBody(order)),
+      }).catch(() => {})
+      clearCart()
+      router.push(`/order/confirmation?tracking=${encodeURIComponent(order.trackingId)}`)
       return
     }
 
-    setPhase('paying')
+    // Paystack: the transaction is initialised on the SERVER (secret key, amount
+    // fixed server-side) and we hand the customer the returned hosted-checkout
+    // link. The order is persisted as unpaid first so /api/orders/pay-link can
+    // find it; /order/paid → /api/orders/paystack-confirm marks it paid on return.
+    setPhase('redirecting')
+    const order = buildOrder('paystack')
+    saveOrder(order)
     try {
-      const result = await payWithPaystack({
-        email: email.trim(),
-        amountNaira: total,
-        metadata: {
-          custom_fields: [
-            { display_name: 'Customer', variable_name: 'customer', value: fullName.trim() },
-            { display_name: 'Phone', variable_name: 'phone', value: phone.trim() },
-            { display_name: 'Fulfillment', variable_name: 'fulfillment', value: fulfillmentType },
-          ],
-        },
+      const created = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderBody(order)),
       })
-
-      if (result.status === 'cancelled') {
-        setPhase('idle')
+      if (!created.ok) {
+        failPayment('We could not start your order. Please try again, or pay by bank transfer.')
         return
       }
 
-      setPhase('saving')
-      const confirmed = await verifyPaystackPayment(result.reference, total)
-      if (!confirmed) {
-        failPayment(
-          `We couldn't confirm this payment with Paystack. If you were debited, message us on WhatsApp with reference ${result.reference}.`,
-        )
+      const linkRes = await fetch('/api/orders/pay-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: order.trackingId }),
+      })
+      const linkJson = (await linkRes.json()) as { ok?: boolean; url?: string; error?: string }
+      if (!linkRes.ok || !linkJson.url) {
+        failPayment(linkJson.error || 'Online payment is unavailable right now. Please pay by bank transfer.')
         return
       }
 
-      finalizeOrder({ paymentMethod: 'paystack', paymentReference: result.reference })
-    } catch (err) {
-      failPayment(err instanceof Error ? err.message : 'Payment failed. Please try again.')
+      clearCart()
+      window.location.href = linkJson.url
+    } catch {
+      failPayment('Could not reach the payment service. Please try again, or pay by bank transfer.')
     }
   }
 
@@ -185,7 +187,7 @@ export default function CheckoutClient() {
       <div className="pt-28 md:pt-36 pb-24 px-4 min-h-screen flex flex-col items-center justify-center text-center">
         <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
         <p className="text-muted-foreground text-base sm:text-lg animate-pulse">
-          {phase === 'paying' ? 'Waiting for your Paystack payment...' : 'Confirming your order...'}
+          {phase === 'redirecting' ? 'Taking you to the secure Paystack checkout...' : 'Confirming your order...'}
         </p>
       </div>
     )
@@ -364,8 +366,9 @@ export default function CheckoutClient() {
                     <ShieldCheck className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm leading-relaxed">
-                        You&apos;ll pay <span className="font-bold text-primary">{formatNaira(total)}</span> in a
-                        secure Paystack window when you place the order — with card, bank transfer or USSD.
+                        You&apos;ll pay <span className="font-bold text-primary">{formatNaira(total)}</span> on
+                        Paystack&apos;s secure checkout page — with card, bank transfer or USSD — then come straight
+                        back here.
                       </p>
                       <p className="text-xs text-muted-foreground mt-2">
                         Your payment is confirmed instantly, no screenshots needed.
