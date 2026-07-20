@@ -219,14 +219,14 @@ export function MenuExplorer({ scrollTargetId = 'menu' }: { scrollTargetId?: str
                   <ShoppingCart className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold opacity-80">Your request</p>
+                  <p className="text-xs font-bold opacity-80">Your cart</p>
                   <p className="font-bold">
                     {itemCount} {itemCount === 1 ? 'item' : 'items'}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold">View request</span>
+                <span className="font-bold">View cart</span>
                 <ArrowRight className="w-5 h-5" />
               </div>
             </motion.div>

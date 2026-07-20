@@ -18,21 +18,29 @@ export interface CartItem {
   qty: number
   image: string
   /**
-   * Optional. The request-a-quote flow never sets a price (the customer never
-   * sees one); it only exists so legacy/quoted-order code keeps compiling.
+   * Indicative unit price in naira, carried from the menu so the cart can show
+   * line totals and an estimated total. The final amount is still confirmed on
+   * the quote, so this may be undefined for legacy carts saved before prices
+   * were shown.
    */
   price?: number
+  /** Pre-formatted price for display (e.g. "₦12,000"). */
+  priceLabel?: string | null
 }
 
 type AddItemInput = {
   id: string
   name: string
   image: string
+  price?: number
+  priceLabel?: string | null
 }
 
 interface CartContextValue {
   items: CartItem[]
   itemCount: number
+  /** Sum of price × qty across the cart (naira). Items with no price count as 0. */
+  subtotal: number
   addItem: (item: AddItemInput, qty?: number) => void
   removeItem: (cartId: string) => void
   updateQty: (cartId: string, qty: number) => void
@@ -50,6 +58,8 @@ function normalizeItem(raw: Partial<CartItem> & { id: string | number }): CartIt
     name: raw.name ?? '',
     qty: Number(raw.qty) || 1,
     image: raw.image ?? '',
+    price: typeof raw.price === 'number' ? raw.price : undefined,
+    priceLabel: raw.priceLabel ?? null,
   }
 }
 
@@ -107,16 +117,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     [items],
   )
 
+  const subtotal = useMemo(
+    () => items.reduce((sum, i) => sum + (i.price ?? 0) * i.qty, 0),
+    [items],
+  )
+
   const value = useMemo(
     () => ({
       items,
       itemCount,
+      subtotal,
       addItem,
       removeItem,
       updateQty,
       clearCart,
     }),
-    [items, itemCount, addItem, removeItem, updateQty, clearCart],
+    [items, itemCount, subtotal, addItem, removeItem, updateQty, clearCart],
   )
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>

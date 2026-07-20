@@ -37,13 +37,13 @@ export function MediaShopButton({
       <button
         type="button"
         onClick={add}
-        aria-label={`Add ${mediaCartName(item)} to request`}
+        aria-label={`Add ${mediaCartName(item)} to cart`}
         className={cn(
           'press inline-flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-br from-primary to-[#00296b] px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-primary/25',
           className,
         )}
       >
-        <Plus className="h-4 w-4" strokeWidth={2.75} /> Add to request
+        <Plus className="h-4 w-4" strokeWidth={2.75} /> Add to cart
       </button>
     )
   }
